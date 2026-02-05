@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AnkiTrans</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="logo">
+        <span class="logo-icon">📚</span>
+        <h1>AnkiTrans</h1>
+      </div>
+      <div id="connection-status" class="status status-checking">
+        <span class="status-dot"></span>
+        <span class="status-text">检测中...</span>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="section">
+        <label class="label" for="deck-select">目标牌组</label>
+        <select id="deck-select" class="select">
+          <option value="">加载中...</option>
+        </select>
+      </section>
+
+      <section class="section">
+        <label class="label" for="lang-select">翻译语言</label>
+        <select id="lang-select" class="select">
+          <option value="zh-CN">简体中文</option>
+          <option value="zh-TW">繁體中文</option>
+          <option value="en">English</option>
+          <option value="ja">日本語</option>
+          <option value="ko">한국어</option>
+          <option value="fr">Français</option>
+          <option value="de">Deutsch</option>
+          <option value="es">Español</option>
+        </select>
+      </section>
+
+      <section class="section">
+        <label class="label">快速添加</label>
+        <div class="input-group">
+          <input type="text" id="quick-text" class="input" placeholder="输入单词或短语...">
+          <button id="quick-add-btn" class="btn btn-primary">添加</button>
+        </div>
+      </section>
+
+      <div id="result-area" class="result-area hidden">
+        <div id="result-content"></div>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <p class="tip">💡 选中网页文字后右键点击「添加到 Anki」</p>
+      <p class="shortcut">快捷键: <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>A</kbd></p>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
