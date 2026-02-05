@@ -38,8 +38,23 @@
           <option value="fr">Français</option>
           <option value="de">Deutsch</option>
           <option value="es">Español</option>
+          <option value="ru">Русский</option>
         </select>
       </section>
+
+      <section class="section">
+        <label class="label" for="engine-select">翻译引擎</label>
+        <select id="engine-select" class="select">
+          <option value="google_free">Google Translate (免费)</option>
+          <option value="deepl">DeepL API</option>
+        </select>
+      </section>
+
+      <div id="deepl-config" class="section hidden">
+        <label class="label" for="deepl-key">DeepL API Key</label>
+        <input type="password" id="deepl-key" class="input" placeholder="输入 API Key">
+        <p class="section-tip">支持 Free 和 Pro 版 Key</p>
+      </div>
 
       <section class="section">
         <label class="label">快速添加</label>

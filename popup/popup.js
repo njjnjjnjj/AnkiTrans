@@ -7,6 +7,9 @@
 const connectionStatus = document.getElementById('connection-status');
 const deckSelect = document.getElementById('deck-select');
 const langSelect = document.getElementById('lang-select');
+const engineSelect = document.getElementById('engine-select');
+const deepLConfig = document.getElementById('deepl-config');
+const deepLKey = document.getElementById('deepl-key');
 const quickText = document.getElementById('quick-text');
 const quickAddBtn = document.getElementById('quick-add-btn');
 const resultArea = document.getElementById('result-area');
@@ -63,8 +66,29 @@ async function loadDecks() {
  */
 async function initSettings() {
     const settings = await sendMessage({ type: 'GET_SETTINGS' });
+
     if (settings.targetLang) {
         langSelect.value = settings.targetLang;
+    }
+
+    if (settings.translationEngine) {
+        engineSelect.value = settings.translationEngine;
+        toggleDeepLConfig(settings.translationEngine === 'deepl');
+    }
+
+    if (settings.deepLApiKey) {
+        deepLKey.value = settings.deepLApiKey;
+    }
+}
+
+/**
+ * 切换 DeepL 配置显示
+ */
+function toggleDeepLConfig(show) {
+    if (show) {
+        deepLConfig.classList.remove('hidden');
+    } else {
+        deepLConfig.classList.add('hidden');
     }
 }
 
@@ -75,6 +99,8 @@ async function saveSettings() {
     const settings = {
         deckName: deckSelect.value,
         targetLang: langSelect.value,
+        translationEngine: engineSelect.value,
+        deepLApiKey: deepLKey.value,
     };
     await sendMessage({ type: 'SAVE_SETTINGS', settings });
 }
@@ -153,6 +179,11 @@ async function init() {
 // 事件监听
 deckSelect.addEventListener('change', saveSettings);
 langSelect.addEventListener('change', saveSettings);
+engineSelect.addEventListener('change', (e) => {
+    toggleDeepLConfig(e.target.value === 'deepl');
+    saveSettings();
+});
+deepLKey.addEventListener('change', saveSettings);
 quickAddBtn.addEventListener('click', quickAdd);
 quickText.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {

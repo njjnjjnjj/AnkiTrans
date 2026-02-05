@@ -10,6 +10,8 @@ import { addNote, checkConnection, createDeck, getDeckNames } from '../lib/anki-
 const DEFAULT_SETTINGS = {
     targetLang: 'zh-CN',
     deckName: 'AnkiTrans',
+    translationEngine: 'google_free', // 'google_free' | 'deepl'
+    deepLApiKey: '',
 };
 
 /**
@@ -67,7 +69,11 @@ async function processSelection(text, tabId) {
         }
 
         // 翻译文本
-        const { translation, detectedLang } = await translate(text, settings.targetLang);
+        const { translation, detectedLang } = await translate(text, {
+            engine: settings.translationEngine,
+            targetLang: settings.targetLang,
+            apiKey: settings.deepLApiKey
+        });
 
         // 确保牌组存在
         await createDeck(settings.deckName);
@@ -137,7 +143,11 @@ async function handleMessage(message, sender) {
 
         case 'ADD_NOTE':
             const settings = await getSettings();
-            const { translation } = await translate(message.text, settings.targetLang);
+            const { translation } = await translate(message.text, {
+                engine: settings.translationEngine,
+                targetLang: settings.targetLang,
+                apiKey: settings.deepLApiKey
+            });
             await createDeck(settings.deckName);
             const noteId = await addNote({
                 deckName: settings.deckName,
