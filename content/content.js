@@ -148,6 +148,9 @@ function renderTemplate(template, data) {
 /**
  * 创建预览模态框
  */
+/**
+ * 创建预览模态框
+ */
 function createPreviewModal(data) {
   // 移除已存在的模态框
   const existing = document.getElementById('ankitrans-preview-host');
@@ -167,6 +170,10 @@ function createPreviewModal(data) {
 
   const shadow = host.attachShadow({ mode: 'open' });
 
+  // 检测暗色模式
+  const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const themeClass = isDarkMode ? 'night_mode' : '';
+
   // 渲染模板
   const frontHtml = renderTemplate(data.frontTemplate, data.fields);
   const backHtml = renderTemplate(data.backTemplate, data.fields);
@@ -175,9 +182,17 @@ function createPreviewModal(data) {
         <style>
             ${data.css}
             
+            /* 强制重置 host 内部变量作用域，确保从 Anki CSS 继承正确的变量 */
+            :host {
+                all: initial;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            }
+
             /* 模态框容器样式 */
             .modal-container {
+                /* 使用 Anki 变量，但提供默认值以防变量未生效 */
                 background: var(--bg-card, #fff);
+                color: var(--text-main, #333);
                 width: 90%;
                 max-width: 600px;
                 max-height: 90vh;
@@ -186,7 +201,6 @@ function createPreviewModal(data) {
                 display: flex;
                 flex-direction: column;
                 overflow: hidden;
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             }
 
             .modal-header {
@@ -195,7 +209,7 @@ function createPreviewModal(data) {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                background: var(--bg-block, #f7fafc);
+                background: var(--bg-secondary, #f7fafc); /* 使用 secondary 背景 */
             }
 
             .modal-title {
@@ -232,6 +246,15 @@ function createPreviewModal(data) {
                 padding: 16px;
                 border-radius: 8px;
                 margin-bottom: 16px;
+                background: var(--bg-card, #fff); /* 确保背景一致 */
+            }
+            
+            /* 修正卡片模板中的 .card 样式 */
+            .card-preview .card {
+                padding: 0;
+                margin: 0;
+                box-shadow: none;
+                background: transparent; /* 透明背景，由父容器控制 */
             }
 
             .modal-footer {
@@ -264,33 +287,27 @@ function createPreviewModal(data) {
                 color: white;
             }
             .btn-primary:hover { filter: brightness(1.1); }
-
-            /* 夜间模式适配 */
-            @media (prefers-color-scheme: dark) {
-                .modal-container { background: #202124; color: #e8eaed; }
-                .modal-header, .btn-secondary { background: #303134; border-color: #3c4043; color: #e8eaed; }
-                 .btn-secondary:hover { background: #3c4043; }
-                .modal-footer { background: #202124; border-color: #3c4043; }
-            }
         </style>
 
-        <div class="modal-container">
-            <div class="modal-header">
-                <span class="modal-title">Push to Anki Preview</span>
-                <button class="close-btn">&times;</button>
-            </div>
-            
-            <div class="modal-content">
-                <div class="preview-label">Front</div>
-                <div class="card-preview">${frontHtml}</div>
+        <div class="theme-wrapper ${themeClass}">
+            <div class="modal-container">
+                <div class="modal-header">
+                    <span class="modal-title">Push to Anki Preview</span>
+                    <button class="close-btn">&times;</button>
+                </div>
+                
+                <div class="modal-content">
+                    <div class="preview-label">Front</div>
+                    <div class="card-preview">${frontHtml}</div>
 
-                <div class="preview-label">Back</div>
-                <div class="card-preview">${backHtml}</div>
-            </div>
+                    <div class="preview-label">Back</div>
+                    <div class="card-preview">${backHtml}</div>
+                </div>
 
-            <div class="modal-footer">
-                <button class="btn btn-secondary cancel-btn">Cancel</button>
-                <button class="btn btn-primary confirm-btn">Add to Anki</button>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary cancel-btn">Cancel</button>
+                    <button class="btn btn-primary confirm-btn">Add to Anki</button>
+                </div>
             </div>
         </div>
     `;
