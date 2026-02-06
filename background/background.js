@@ -3,7 +3,15 @@
  * 处理右键菜单、消息传递和 API 协调
  */
 
-import { addNoteWithFields, checkConnection, createDeck, getDeckNames } from '../lib/anki-connect.js';
+import {
+    addNoteWithFields,
+    checkConnection,
+    createDeck,
+    getDeckNames,
+    ANKITRANS_FRONT_TEMPLATE,
+    ANKITRANS_BACK_TEMPLATE,
+    ANKITRANS_CSS
+} from '../lib/anki-connect.js';
 import { lookupWord, buildCardFields } from '../lib/dictionary.js';
 
 // 默认设置
@@ -44,14 +52,12 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 });
 
 /**
- * 处理选中文本：查词并添加到 Anki
+ * 处理选中文本：查词并触发预览
  */
 async function processSelection(text, tabId) {
     try {
         // 通知 content script 显示加载状态
         await sendToContentScript(tabId, { type: 'LOADING', text });
-
-        const settings = await getSettings();
 
         // 检查 AnkiConnect 连接
         const connected = await checkConnection();
@@ -68,24 +74,16 @@ async function processSelection(text, tabId) {
 
         // 生成卡片字段
         const cardFields = buildCardFields(text, wordInfo);
-        const translation = cardFields.Translation || '无翻译';
 
-        // 确保牌组存在
-        await createDeck(settings.deckName);
-
-        // 添加笔记
-        const noteId = await addNoteWithFields({
-            deckName: settings.deckName,
-            fields: cardFields,
-            tags: ['bing-dict'],
-        });
-
-        // 通知成功
+        // 发送预览请求
         await sendToContentScript(tabId, {
-            type: 'SUCCESS',
-            text,
-            translation,
-            noteId,
+            type: 'SHOW_PREVIEW',
+            data: {
+                fields: cardFields,
+                css: ANKITRANS_CSS,
+                frontTemplate: ANKITRANS_FRONT_TEMPLATE,
+                backTemplate: ANKITRANS_BACK_TEMPLATE
+            }
         });
 
     } catch (error) {
@@ -103,25 +101,20 @@ async function processSelection(text, tabId) {
  */
 async function sendToContentScript(tabId, message) {
     try {
-        await chrome.tabs.sendMessage(tabId, message);
+        // 捕获特定错误，防止扩展上下文失效导致的问题
+        await chrome.tabs.sendMessage(tabId, message).catch(err => {
+            console.warn('Tab message failed:', err);
+            if (message.type === 'ERROR') {
+                chrome.notifications.create({
+                    type: 'basic',
+                    iconUrl: 'icons/icon128.png',
+                    title: 'AnkiTrans 错误',
+                    message: message.message
+                });
+            }
+        });
     } catch (error) {
-        console.warn('Failed to send message to content script, falling back to notification:', error);
-
-        if (message.type === 'ERROR') {
-            chrome.notifications.create({
-                type: 'basic',
-                iconUrl: 'icons/icon128.png',
-                title: 'AnkiTrans 错误',
-                message: message.message
-            });
-        } else if (message.type === 'SUCCESS') {
-            chrome.notifications.create({
-                type: 'basic',
-                iconUrl: 'icons/icon128.png',
-                title: '已添加到 Anki',
-                message: `${message.text}\n${message.translation}`
-            });
-        }
+        console.warn('Top level send error:', error);
     }
 }
 
@@ -152,25 +145,28 @@ async function handleMessage(message, sender) {
             return { success: true };
 
         case 'ADD_NOTE':
-            const settings = await getSettings();
-
-            // 查询必应词典
-            const wordInfo = await lookupWord(message.text);
-
-            if (!wordInfo || wordInfo.definitions.length === 0) {
-                throw new Error(`未找到 "${message.text}" 的释义`);
+            // 旧的直接添加逻辑，为了兼容快捷键，也可以复用 processSelection
+            if (sender.tab) {
+                await processSelection(message.text, sender.tab.id);
+                return { success: true, processing: true }; // 异步处理
             }
+            return { error: 'Invalid sender' };
 
-            const cardFields = buildCardFields(message.text, wordInfo);
-            const translation = cardFields.Translation || '无翻译';
-
+        case 'CONFIRM_ADD_NOTE':
+            const settings = await getSettings();
             await createDeck(settings.deckName);
 
             const noteId = await addNoteWithFields({
                 deckName: settings.deckName,
-                fields: cardFields,
+                fields: message.fields,
+                tags: ['bing-dict'],
             });
-            return { success: true, noteId, translation };
+
+            return {
+                success: true,
+                noteId,
+                translation: message.fields.Translation
+            };
 
         default:
             throw new Error(`Unknown message type: ${message.type}`);

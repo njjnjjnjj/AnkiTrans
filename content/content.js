@@ -1,7 +1,9 @@
 /**
  * AnkiTrans - Content Script
- * 处理页面内文本选择和通知显示
+ * 处理页面内文本选择、通知显示及卡片预览
  */
+
+// --- 通知系统 (保留原有逻辑) ---
 
 // 创建通知容器
 function createNotificationContainer() {
@@ -121,43 +123,263 @@ function removeLoadingNotification() {
 // 存储当前加载通知的引用
 let currentLoadingNotification = null;
 
+// --- 预览模态框系统 ---
+
+/**
+ * 简单的 Mustache 模板渲染
+ */
+function renderTemplate(template, data) {
+  let result = template;
+
+  // 处理区块 ({{#prop}}...{{/prop}})
+  const sectionRegex = /\{\{#(\w+)\}\}([\s\S]*?)\{\{\/\1\}\}/g;
+  result = result.replace(sectionRegex, (match, key, content) => {
+    return data[key] ? content.replace(/\{\{(\w+)\}\}/g, (m, k) => k === key ? data[key] : m) : '';
+  });
+
+  // 处理简单变量 ({{prop}})
+  result = result.replace(/\{\{(\w+)\}\}/g, (match, key) => {
+    return data[key] || '';
+  });
+
+  return result;
+}
+
+/**
+ * 创建预览模态框
+ */
+function createPreviewModal(data) {
+  // 移除已存在的模态框
+  const existing = document.getElementById('ankitrans-preview-host');
+  if (existing) existing.remove();
+
+  const host = document.createElement('div');
+  host.id = 'ankitrans-preview-host';
+  host.style.cssText = `
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    `;
+
+  const shadow = host.attachShadow({ mode: 'open' });
+
+  // 渲染模板
+  const frontHtml = renderTemplate(data.frontTemplate, data.fields);
+  const backHtml = renderTemplate(data.backTemplate, data.fields);
+
+  shadow.innerHTML = `
+        <style>
+            ${data.css}
+            
+            /* 模态框容器样式 */
+            .modal-container {
+                background: var(--bg-card, #fff);
+                width: 90%;
+                max-width: 600px;
+                max-height: 90vh;
+                border-radius: 12px;
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            }
+
+            .modal-header {
+                padding: 16px 24px;
+                border-bottom: 1px solid var(--border, #e2e8f0);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                background: var(--bg-block, #f7fafc);
+            }
+
+            .modal-title {
+                font-weight: 600;
+                color: var(--text-main, #1a1a2e);
+            }
+
+            .close-btn {
+                background: none;
+                border: none;
+                font-size: 24px;
+                cursor: pointer;
+                color: var(--text-muted, #718096);
+            }
+            .close-btn:hover { color: var(--text-main, #000); }
+
+            .modal-content {
+                padding: 24px;
+                overflow-y: auto;
+                flex: 1;
+            }
+
+            .preview-label {
+                font-size: 12px;
+                text-transform: uppercase;
+                color: var(--text-muted, #718096);
+                margin: 16px 0 8px;
+                letter-spacing: 0.05em;
+            }
+            .preview-label:first-child { margin-top: 0; }
+
+            .card-preview {
+                border: 1px dashed var(--border, #e2e8f0);
+                padding: 16px;
+                border-radius: 8px;
+                margin-bottom: 16px;
+            }
+
+            .modal-footer {
+                padding: 16px 24px;
+                border-top: 1px solid var(--border, #e2e8f0);
+                display: flex;
+                justify-content: flex-end;
+                gap: 12px;
+                background: var(--bg-card, #fff);
+            }
+
+            .btn {
+                padding: 8px 16px;
+                border-radius: 6px;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.2s;
+                border: 1px solid transparent;
+            }
+
+            .btn-secondary {
+                background: var(--bg-block, #f7fafc);
+                color: var(--text-sub, #4a5568);
+                border-color: var(--border, #e2e8f0);
+            }
+            .btn-secondary:hover { background: var(--border, #e2e8f0); }
+
+            .btn-primary {
+                background: var(--accent, #4a90d9);
+                color: white;
+            }
+            .btn-primary:hover { filter: brightness(1.1); }
+
+            /* 夜间模式适配 */
+            @media (prefers-color-scheme: dark) {
+                .modal-container { background: #202124; color: #e8eaed; }
+                .modal-header, .btn-secondary { background: #303134; border-color: #3c4043; color: #e8eaed; }
+                 .btn-secondary:hover { background: #3c4043; }
+                .modal-footer { background: #202124; border-color: #3c4043; }
+            }
+        </style>
+
+        <div class="modal-container">
+            <div class="modal-header">
+                <span class="modal-title">Push to Anki Preview</span>
+                <button class="close-btn">&times;</button>
+            </div>
+            
+            <div class="modal-content">
+                <div class="preview-label">Front</div>
+                <div class="card-preview">${frontHtml}</div>
+
+                <div class="preview-label">Back</div>
+                <div class="card-preview">${backHtml}</div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary cancel-btn">Cancel</button>
+                <button class="btn btn-primary confirm-btn">Add to Anki</button>
+            </div>
+        </div>
+    `;
+
+  // 绑定事件
+  const close = () => host.remove();
+  shadow.querySelector('.close-btn').onclick = close;
+  shadow.querySelector('.cancel-btn').onclick = close;
+
+  shadow.querySelector('.confirm-btn').onclick = async () => {
+    close();
+
+    // 显示加载状态
+    const loadingToast = showNotification('loading', `
+            <div style="font-weight: 600; margin-bottom: 4px;">正在添加...</div>
+            <div style="color: #666; font-size: 13px;">${escapeHtml(data.fields.Word)}</div>
+        `);
+
+    // 发送确认消息
+    try {
+      chrome.runtime.sendMessage({
+        type: 'CONFIRM_ADD_NOTE',
+        fields: data.fields
+      }, response => {
+        loadingToast.remove();
+
+        if (chrome.runtime.lastError) {
+          showNotification('error', `错误: ${chrome.runtime.lastError.message}`);
+          return;
+        }
+
+        if (response && response.success) {
+          showNotification('success', `
+                        <div style="font-weight: 600; margin-bottom: 4px;">已添加到 Anki</div>
+                        <div style="margin-bottom: 6px;">
+                          <span style="color: #666;">单词：</span>
+                          <span>${escapeHtml(data.fields.Word)}</span>
+                        </div>
+                    `);
+        } else {
+          showNotification('error', `添加失败: ${response.error || '未知错误'}`);
+        }
+      });
+    } catch (e) {
+      loadingToast.remove();
+      showNotification('error', `通信错误: ${e.message}`);
+    }
+  };
+
+  document.body.appendChild(host);
+}
+
+
 /**
  * 监听来自 background script 的消息
  */
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // 移除可能存在的旧加载提示
+  if (['SUCCESS', 'ERROR', 'SHOW_PREVIEW'].includes(message.type)) {
+    if (currentLoadingNotification) {
+      currentLoadingNotification.remove();
+      currentLoadingNotification = null;
+    }
+    removeLoadingNotification();
+  }
+
   switch (message.type) {
     case 'LOADING':
       currentLoadingNotification = showNotification('loading', `
-        <div style="font-weight: 600; margin-bottom: 4px;">正在处理...</div>
+        <div style="font-weight: 600; margin-bottom: 4px;">正在分析...</div>
         <div style="color: #666; font-size: 13px;">${escapeHtml(message.text)}</div>
       `);
       break;
 
+    case 'SHOW_PREVIEW':
+      createPreviewModal(message.data);
+      break;
+
     case 'SUCCESS':
-      if (currentLoadingNotification) {
-        currentLoadingNotification.remove();
-        currentLoadingNotification = null;
-      }
+      // 保留旧的成功逻辑处理，以防万一
       showNotification('success', `
         <div style="font-weight: 600; margin-bottom: 4px;">已添加到 Anki</div>
-        <div style="margin-bottom: 6px;">
-          <span style="color: #666;">原文：</span>
-          <span>${escapeHtml(message.text)}</span>
-        </div>
-        <div>
-          <span style="color: #666;">翻译：</span>
-          <span style="color: #22c55e;">${escapeHtml(message.translation)}</span>
-        </div>
+        <div>${escapeHtml(message.text)}</div>
       `);
       break;
 
     case 'ERROR':
-      if (currentLoadingNotification) {
-        currentLoadingNotification.remove();
-        currentLoadingNotification = null;
-      }
       showNotification('error', `
-        <div style="font-weight: 600; margin-bottom: 4px;">添加失败</div>
+        <div style="font-weight: 600; margin-bottom: 4px;">错误</div>
         <div style="color: #666; font-size: 13px;">${escapeHtml(message.message)}</div>
       `);
       break;
@@ -171,6 +393,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
  * HTML 转义
  */
 function escapeHtml(text) {
+  if (!text) return '';
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
@@ -183,67 +406,16 @@ document.addEventListener('keydown', async (e) => {
     if (selection) {
       e.preventDefault();
 
-      // 检查扩展上下文是否有效
       if (!chrome.runtime?.id) {
-        console.warn('AnkiTrans: Extension context invalidated. Please refresh the page.');
+        console.warn('AnkiTrans: Extension context invalidated.');
         return;
       }
 
-      // 显示加载状态
-      const loadingToast = showNotification('loading', `
-                <div style="font-weight: 600; margin-bottom: 4px;">正在处理...</div>
-                <div style="color: #666; font-size: 13px;">${escapeHtml(selection)}</div>
-            `);
-
-      try {
-        chrome.runtime.sendMessage({
-          type: 'ADD_NOTE',
-          text: selection,
-        }, response => {
-          // 检查 chrome.runtime.lastError
-          if (chrome.runtime.lastError) {
-            loadingToast.remove();
-            showNotification('error', `
-              <div style="font-weight: 600; margin-bottom: 4px;">扩展已重新加载</div>
-              <div style="color: #666; font-size: 13px;">请刷新页面后重试</div>
-            `);
-            return;
-          }
-
-          // 移除加载通知
-          loadingToast.remove();
-
-          if (response && response.error) {
-            showNotification('error', `
-                            <div style="font-weight: 600; margin-bottom: 4px;">添加失败</div>
-                            <div style="color: #666; font-size: 13px;">${escapeHtml(response.error)}</div>
-                        `);
-          } else if (response && response.translation) {
-            showNotification('success', `
-                            <div style="font-weight: 600; margin-bottom: 4px;">已添加到 Anki</div>
-                            <div style="margin-bottom: 6px;">
-                                <span style="color: #666;">原文：</span>
-                                <span>${escapeHtml(selection)}</span>
-                            </div>
-                            <div>
-                                <span style="color: #666;">翻译：</span>
-                                <span style="color: #22c55e;">${escapeHtml(response.translation)}</span>
-                            </div>
-                        `);
-          } else {
-            showNotification('error', `
-                            <div style="font-weight: 600; margin-bottom: 4px;">添加失败</div>
-                            <div style="color: #666; font-size: 13px;">未收到响应，请检查扩展是否正常运行</div>
-                        `);
-          }
-        });
-      } catch (error) {
-        loadingToast.remove();
-        showNotification('error', `
-          <div style="font-weight: 600; margin-bottom: 4px;">扩展已重新加载</div>
-          <div style="color: #666; font-size: 13px;">请刷新页面后重试</div>
-        `);
-      }
+      // 这里直接发送 ADD_NOTE，由 background 处理成预览流程
+      chrome.runtime.sendMessage({
+        type: 'ADD_NOTE',
+        text: selection,
+      });
     }
   }
 });
