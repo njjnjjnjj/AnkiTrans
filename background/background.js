@@ -16,8 +16,9 @@ import {
 import { lookupWord, buildCardFields } from '../lib/dictionary.js';
 
 // 默认设置
+// 默认设置
 const DEFAULT_SETTINGS = {
-    deckName: 'AnkiTrans',
+    deckName: '', // 默认为空，强制用户选择
 };
 
 /**
@@ -217,7 +218,12 @@ async function handleMessage(message, sender) {
 
         case 'CONFIRM_ADD_NOTE':
             const settings = await getSettings();
-            await createDeck(settings.deckName);
+
+            if (!settings.deckName) {
+                throw new Error('未指定牌组！请点击插件图标，在设置中选择一个目标牌组。');
+            }
+
+            // await createDeck(settings.deckName);  <-- Removed per user request
 
             const noteId = await addNoteWithFields({
                 deckName: settings.deckName,
