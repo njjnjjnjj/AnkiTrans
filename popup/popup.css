@@ -1,6 +1,7 @@
 :root {
   --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   --bg-color: #ffffff;
+  --bg-block: #f3f4f6; /* Light gray for page background */
   --text-color: #1f2937;
   --text-secondary: #6b7280;
   --border-color: #e5e7eb;
@@ -21,6 +22,7 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --bg-color: #1a1b1e;
+    --bg-block: #050505; /* Deep black for page background */
     --text-color: #e5e7eb;
     --text-secondary: #9ca3af;
     --border-color: #374151;

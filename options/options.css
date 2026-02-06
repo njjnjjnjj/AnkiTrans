@@ -249,12 +249,57 @@ input:checked + .slider:before {
 }
 
 .tag {
-  background: var(--bg-color);
+  background: var(--bg-block);
   border: 1px solid var(--border-color);
   padding: 4px 10px;
   border-radius: 4px;
   font-size: 12px;
   color: var(--text-secondary);
   font-family: monospace;
+}
+
+/* Mock Card Styles */
+.mock-card {
+  max-width: 400px;
+  margin: 0 auto;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  border-radius: 8px;
+  overflow: hidden;
+  font-family: 'Segoe UI', sans-serif;
+  border: 1px solid var(--border-color);
+}
+
+.card-face {
+  padding: 20px;
+}
+
+.card-face.front {
+  background: var(--input-bg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.card-face.back {
+  background: var(--bg-block);
+}
+
+.word-text {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--text-color);
+  margin-bottom: 8px;
+}
+
+.phonetics {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.example-box {
+  font-size: 13px;
+  color: var(--text-secondary);
+  background: var(--input-bg);
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
 }
 
