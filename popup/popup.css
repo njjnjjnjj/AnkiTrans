@@ -305,5 +305,36 @@ kbd {
   margin-left: 2px;
 }
 
+/* Field Mapping */
+.field-mapping {
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px;
+}
+
+.field-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.field-row:last-child {
+  margin-bottom: 0;
+}
+
+.field-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  min-width: 90px;
+}
+
+.select-sm {
+  flex: 1;
+  padding: 6px 8px;
+  font-size: 12px;
+}
+
 .hidden { display: none !important; }
 

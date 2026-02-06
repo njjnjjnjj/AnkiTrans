@@ -4,13 +4,16 @@
  */
 
 import { translate } from '../lib/translator.js';
-import { addNote, checkConnection, createDeck, getDeckNames } from '../lib/anki-connect.js';
+import { addNote, checkConnection, createDeck, getDeckNames, getModelNames, getModelFieldNames } from '../lib/anki-connect.js';
 
 // 默认设置
 const DEFAULT_SETTINGS = {
     targetLang: 'zh-CN',
     deckName: 'AnkiTrans',
-    translationEngine: 'google_free', // 'google_free' | 'deepl'
+    modelName: '',      // 用户选择的笔记类型
+    frontField: '',     // 正面字段名
+    backField: '',      // 背面字段名
+    translationEngine: 'google_free',
     deepLApiKey: '',
 };
 
@@ -151,6 +154,12 @@ async function handleMessage(message, sender) {
         case 'GET_DECKS':
             return { decks: await getDeckNames() };
 
+        case 'GET_MODELS':
+            return { models: await getModelNames() };
+
+        case 'GET_MODEL_FIELDS':
+            return { fields: await getModelFieldNames(message.modelName) };
+
         case 'GET_SETTINGS':
             return await getSettings();
 
@@ -168,6 +177,9 @@ async function handleMessage(message, sender) {
             await createDeck(settings.deckName);
             const noteId = await addNote({
                 deckName: settings.deckName,
+                modelName: settings.modelName,
+                frontField: settings.frontField,
+                backField: settings.backField,
                 front: message.text,
                 back: translation,
             });
