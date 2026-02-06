@@ -97,6 +97,56 @@
       </section>
 
       <section class="section">
+        <h3>🎨 卡片模板说明</h3>
+        <div class="template-card" style="background: var(--input-bg); padding: 25px; border-radius: 12px; border: 1px solid var(--border-color);">
+            <p style="margin-bottom: 20px; color: var(--text-secondary); line-height: 1.6;">
+                本扩展程序会自动在您的 Anki 中创建一个名为 <strong>AnkiTrans</strong> 的专属卡片模板（Note Type）。<br>
+                该模板经过精心设计，包含以下字段以呈现完美的必应词典数据：
+            </p>
+            
+            <div class="field-tags" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 25px;">
+                <span class="tag">Word</span>
+                <span class="tag">Phonetic</span>
+                <span class="tag">Translation</span>
+                <span class="tag">Inflections</span>
+                <span class="tag">Example</span>
+                <span class="tag">...</span>
+            </div>
+
+            <div class="preview-container" style="border: 2px dashed var(--border-color); border-radius: 8px; padding: 20px; background: var(--bg-color);">
+                <div class="preview-label" style="text-align: center; margin-bottom: 15px; font-size: 12px; color: var(--text-secondary); text-transform: uppercase;">示例卡片预览</div>
+                
+                <!-- Mock Card -->
+                <div class="mock-card" style="max-width: 400px; margin: 0 auto; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; font-family: 'Segoe UI', sans-serif;">
+                    <!-- Front -->
+                    <div class="card-face front" style="background: white; padding: 20px; border-bottom: 1px solid #eee;">
+                        <div style="font-size: 24px; font-weight: bold; color: #333; margin-bottom: 8px;">hello</div>
+                        <div style="color: #666; font-size: 14px;">
+                            <span style="margin-right: 10px;">🇺🇸 [həˈloʊ]</span>
+                            <span>🇬🇧 [həˈləʊ]</span>
+                        </div>
+                    </div>
+                    <!-- Back (Simplified) -->
+                    <div class="card-face back" style="background: #f9f9f9; padding: 20px;">
+                        <div style="margin-bottom: 12px;">
+                            <span style="color: #667eea; font-weight: bold; margin-right: 8px;">int.</span>
+                            <span style="color: #333;">你好；喂；您好</span>
+                        </div>
+                        <div style="font-size: 13px; color: #555; background: #fff; padding: 10px; border-radius: 6px; border: 1px solid #eee;">
+                            <div style="margin-bottom: 4px;">Hello, who's speaking, please?</div>
+                            <div style="color: #888;">喂，请问是哪位？</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <p style="margin-top: 15px; font-size: 12px; color: var(--text-secondary); text-align: center;">
+                * 您可以随时在 Anki 的 "管理笔记类型" 中自定义此模板的样式。
+            </p>
+        </div>
+      </section>
+
+      <section class="section">
         <h3>❓ 常见问题</h3>
         <div class="faq-item">
           <h4>Q: 为什么提示 "Extension context invalidated"?</h4>
