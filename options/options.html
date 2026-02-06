@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AnkiTrans 设置指南</title>
+  <link rel="stylesheet" href="../popup/popup.css"> <!-- 复用基础样式 -->
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="options-container">
+    <header class="header options-header">
+      <div class="logo">
+        <span class="logo-icon">📚</span>
+        <h1>AnkiTrans 使用指南</h1>
+      </div>
+    </header>
+
+    <main class="main options-main">
+      <div class="intro-card">
+        <h2>👋 欢迎使用 AnkiTrans</h2>
+        <p>AnkiTrans 是一款极简的划词制卡工具，致力于帮助您在浏览网页时，以最快速度将生词捕捉并同步到 Anki 中。</p>
+      </div>
+
+      <section class="section">
+        <h3>🚀 快速开始</h3>
+        <ul class="steps-list">
+          <li>
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <h4>启动 Anki</h4>
+              <p>确保 Anki 桌面版已打开，并且安装了 <a href="https://ankiweb.net/shared/info/2055492159" target="_blank">AnkiConnect</a> 插件。</p>
+            </div>
+          </li>
+          <li>
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <h4>选择目标牌组</h4>
+              <p>点击浏览器右上角的扩展图标，在弹窗中选择您的目标牌组（Deck）。<strong>这是必须的步骤</strong>。</p>
+            </div>
+          </li>
+          <li>
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <h4>开始制卡</h4>
+              <p>在任意网页选中单词，使用以下任一方式：</p>
+              <div class="methods">
+                <div class="method-item">
+                  <span class="method-icon">⌨️</span>
+                  <span>快捷键 <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>A</kbd></span>
+                </div>
+                <div class="method-item">
+                  <span class="method-icon">🖱️</span>
+                  <span>右键菜单选择「添加到 Anki」</span>
+                </div>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </section>
+
+      <section class="section">
+        <h3>✨ 核心功能</h3>
+        <div class="features-grid">
+          <div class="feature-card">
+            <span class="feature-icon">🔊</span>
+            <h4>双语发音</h4>
+            <p>自动提取并保存美式与英式发音，卡片预览支持即时试听。</p>
+          </div>
+          <div class="feature-card">
+            <span class="feature-icon">📖</span>
+            <h4>必应词典</h4>
+            <p>集成必应词典权威释义，包含音标、例句、搭配等丰富信息。</p>
+          </div>
+          <div class="feature-card">
+            <span class="feature-icon">⚡</span>
+            <h4>极速添加</h4>
+            <p>无缝后台处理，不打断阅读心流，支持批量操作。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3>❓ 常见问题</h3>
+        <div class="faq-item">
+          <h4>Q: 为什么提示 "Extension context invalidated"?</h4>
+          <p>A: 这通常发生在插件更新后。请尝试<strong>手动重新加载页面</strong>，或者在扩展管理页点击刷新按钮。</p>
+        </div>
+        <div class="faq-item">
+          <h4>Q: 图片或音频无法下载？</h4>
+          <p>A: 请检查网络连接，确保能够访问 cn.bing.com。</p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer options-footer">
+      <p>Made with ❤️ by AnkiTrans Team</p>
+    </footer>
+  </div>
+  <script src="options.js"></script>
+</body>
+</html>

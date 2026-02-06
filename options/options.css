@@ -1,0 +1,209 @@
+
+/* 继承popup.css的变量，额外定义options特有样式 */
+body {
+  width: 100%;
+  min-height: 100vh;
+  background: var(--bg-block); /* 使用稍微深一点/浅一点的背景区分 */
+}
+
+.options-container {
+  max-width: 800px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: var(--bg-color);
+  box-shadow: 0 0 20px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+}
+
+.options-header {
+  padding: 20px 40px;
+  height: auto;
+}
+
+.options-header .logo h1 {
+  font-size: 20px;
+}
+
+.options-main {
+  padding: 40px;
+}
+
+.intro-card {
+  text-align: center;
+  margin-bottom: 40px;
+  padding: 30px;
+  background: var(--primary-gradient);
+  border-radius: 16px;
+  color: white;
+  box-shadow: 0 10px 20px rgba(100, 100, 255, 0.2);
+}
+
+.intro-card h2 {
+  font-size: 24px;
+  margin-bottom: 12px;
+}
+
+.intro-card p {
+  opacity: 0.9;
+  font-size: 16px;
+  line-height: 1.6;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+h3 {
+  font-size: 18px;
+  color: var(--text-color);
+  margin-bottom: 20px;
+  padding-left: 12px;
+  border-left: 4px solid #667eea;
+}
+
+/* Steps */
+.steps-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.steps-list li {
+  display: flex;
+  gap: 20px;
+  background: var(--input-bg);
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  transition: transform 0.2s;
+}
+
+.steps-list li:hover {
+  transform: translateX(5px);
+  border-color: #a5b4fc;
+}
+
+.step-num {
+  width: 32px;
+  height: 32px;
+  background: var(--bg-block);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: #667eea;
+  flex-shrink: 0;
+  border: 2px solid #e0e7ff;
+}
+
+.step-content h4 {
+  margin-bottom: 8px;
+  color: var(--text-color);
+}
+
+.step-content p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.step-content a {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.methods {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.method-item {
+  background: var(--bg-block);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Features Grid */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.feature-card {
+  padding: 20px;
+  border-radius: 12px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  text-align: center;
+  transition: transform 0.2s;
+}
+
+.feature-card:hover {
+  transform: translateY(-5px);
+}
+
+.feature-icon {
+  font-size: 32px;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.feature-card h4 {
+  margin-bottom: 8px;
+  color: var(--text-color);
+}
+
+.feature-card p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* FAQ */
+.faq-item {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.faq-item:last-child {
+  border-bottom: none;
+}
+
+.faq-item h4 {
+  font-size: 15px;
+  margin-bottom: 8px;
+  color: var(--text-color);
+}
+
+.faq-item p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.options-footer {
+  text-align: center;
+  padding: 30px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+kbd {
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-family: monospace;
+  font-size: 12px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
