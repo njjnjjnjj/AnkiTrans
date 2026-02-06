@@ -125,7 +125,14 @@ async function updateMockCard() {
                 <style>
                     ${ANKITRANS_CSS}
                     /* Overrides to ensure it fits in options page */
-                    .card { box-shadow: none; margin: 0; width: 100%; border: none; }
+                    .card { 
+                        box-shadow: none; 
+                        margin: 0; 
+                        width: 100%; 
+                        max-width: 100% !important; 
+                        border: none; 
+                        box-sizing: border-box;
+                    }
                 </style>
             `;
 
