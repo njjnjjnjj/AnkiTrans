@@ -209,7 +209,7 @@ function createPreviewModal(data) {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                background: var(--bg-secondary, #f7fafc); /* 使用 secondary 背景 */
+                background: var(--bg-block, #f7fafc); /* 使用正确的 bg-block 变量 */
             }
 
             .modal-title {
@@ -223,6 +223,8 @@ function createPreviewModal(data) {
                 font-size: 24px;
                 cursor: pointer;
                 color: var(--text-muted, #718096);
+                padding: 0;
+                line-height: 1;
             }
             .close-btn:hover { color: var(--text-main, #000); }
 
@@ -230,6 +232,24 @@ function createPreviewModal(data) {
                 padding: 24px;
                 overflow-y: auto;
                 flex: 1;
+                /* 优化滚动条样式 */
+                scrollbar-width: thin;
+                scrollbar-color: var(--border, #e2e8f0) transparent;
+            }
+
+            /* Webkit 滚动条样式 */
+            .modal-content::-webkit-scrollbar {
+                width: 6px;
+            }
+            .modal-content::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            .modal-content::-webkit-scrollbar-thumb {
+                background-color: var(--border, #e2e8f0);
+                border-radius: 3px;
+            }
+            .modal-content::-webkit-scrollbar-thumb:hover {
+                background-color: var(--text-muted, #718096);
             }
 
             .preview-label {
