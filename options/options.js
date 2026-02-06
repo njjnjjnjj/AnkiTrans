@@ -103,9 +103,14 @@ async function updateMockCard() {
 
         if (response && response.fields) {
             const fields = response.fields;
+            const { audioUS, audioUK } = response;
 
             let frontHtml = renderTemplate(ANKITRANS_FRONT_TEMPLATE, fields);
             let backHtml = renderTemplate(ANKITRANS_BACK_TEMPLATE, fields);
+
+            // Inject Audio Buttons
+            frontHtml = processPhoneticForPreview(frontHtml, audioUS, audioUK);
+            backHtml = processPhoneticForPreview(backHtml, audioUS, audioUK);
 
             // Audio CSS (from content.js)
             const audioCss = `
@@ -197,6 +202,18 @@ async function updateMockCard() {
             if (refreshBtn) {
                 refreshBtn.onclick = updateMockCard;
             }
+
+            // Bind Audio Events
+            shadow.querySelectorAll('.audio-btn').forEach(btn => {
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    const url = btn.getAttribute('data-url');
+                    if (url) {
+                        console.log('Playing audio preview:', url);
+                        new Audio(url).play().catch(err => console.warn('Audio play failed', err));
+                    }
+                };
+            });
 
         } else {
             shadow.innerHTML = `

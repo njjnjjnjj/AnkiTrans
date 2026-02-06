@@ -272,7 +272,11 @@ async function handleMessage(message, sender) {
                 throw new Error('Lookup failed');
             }
             const fields = buildCardFields(message.word, wordInfo);
-            return { fields };
+            return {
+                fields,
+                audioUS: wordInfo.audioUS,
+                audioUK: wordInfo.audioUK
+            };
 
         default:
             throw new Error(`Unknown message type: ${message.type}`);
