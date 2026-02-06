@@ -304,7 +304,7 @@ function createPreviewModal(data) {
             .btn-primary:hover { filter: brightness(1.1); }
         </style>
 
-        <div class="theme-wrapper" id="themeWrapper">
+        <div class="theme-wrapper anki-variables" id="themeWrapper">
             <div class="modal-container">
                 <div class="modal-header">
                     <span class="modal-title">Push to Anki Preview</span>
