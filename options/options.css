@@ -303,3 +303,45 @@ input:checked + .slider:before {
   border: 1px solid var(--border-color);
 }
 
+/* Field Table styles */
+.field-table-container {
+  margin-bottom: 25px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.field-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.field-table th {
+  background: var(--bg-block);
+  padding: 10px 15px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-color);
+  font-weight: 600;
+}
+
+.field-table td {
+  padding: 10px 15px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+
+.field-table tr:last-child td {
+  border-bottom: none;
+}
+
+.field-table code {
+  background: rgba(102, 126, 234, 0.1);
+  color: #667eea;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-weight: bold;
+}
+

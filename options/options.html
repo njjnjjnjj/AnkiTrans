@@ -104,13 +104,50 @@
                 该模板经过精心设计，包含以下字段以呈现完美的必应词典数据：
             </p>
             
-            <div class="field-tags" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 25px;">
-                <span class="tag">Word</span>
-                <span class="tag">Phonetic</span>
-                <span class="tag">Translation</span>
-                <span class="tag">Inflections</span>
-                <span class="tag">Example</span>
-                <span class="tag">...</span>
+            <!-- Field Explanations -->
+            <div class="field-table-container">
+                <table class="field-table">
+                    <thead>
+                        <tr>
+                            <th>字段名 (Field)</th>
+                            <th>说明 (Description)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>Word</code></td>
+                            <td>单词原文，卡片正面核心内容。</td>
+                        </tr>
+                        <tr>
+                            <td><code>Phonetic</code></td>
+                            <td>双语音标（美式/英式），包含发音按钮 HTML 代码。</td>
+                        </tr>
+                        <tr>
+                            <td><code>Translation</code></td>
+                            <td>主要中文释义，包含词性标注。</td>
+                        </tr>
+                        <tr>
+                            <td><code>Inflections</code></td>
+                            <td>单词变形信息（如：复数、过去式、进行时等）。</td>
+                        </tr>
+                        <tr>
+                            <td><code>Example</code></td>
+                            <td>精选双语例句（通常包含 1-3 个例句）。</td>
+                        </tr>
+                        <tr>
+                            <td><code>Collocations</code></td>
+                            <td>常见词组搭配。</td>
+                        </tr>
+                        <tr>
+                            <td><code>Synonyms</code></td>
+                            <td>同义词或近义词。</td>
+                        </tr>
+                        <tr>
+                            <td><code>DomainDefs</code></td>
+                            <td>网络释义或特定领域的专业释义。</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
 
             <div class="preview-container" style="border: 2px dashed var(--border-color); border-radius: 8px; padding: 20px; background: var(--bg-block);">
