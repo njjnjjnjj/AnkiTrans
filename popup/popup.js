@@ -42,13 +42,19 @@ function updateConnectionStatus(connected) {
 async function loadDecks() {
     try {
         const { decks } = await sendMessage({ type: 'GET_DECKS' });
-        deckSelect.innerHTML = decks
-            .map(deck => `<option value="${deck}">${deck}</option>`)
-            .join('');
+
+        // Add a placeholder option at the beginning
+        let optionsHtml = '<option value="" disabled selected>请选择目标牌组...</option>';
+        optionsHtml += decks.map(deck => `<option value="${deck}">${deck}</option>`).join('');
+
+        deckSelect.innerHTML = optionsHtml;
 
         const settings = await sendMessage({ type: 'GET_SETTINGS' });
         if (settings.deckName && decks.includes(settings.deckName)) {
             deckSelect.value = settings.deckName;
+        } else {
+            // If no setting or setting invalid, make sure the placeholder is selected (default browser behavior might pick first option if "selected" attribute isn't strictly respected when value is empty, but forcing value to "" helps)
+            deckSelect.value = "";
         }
     } catch (error) {
         console.error('Failed to load decks:', error);
