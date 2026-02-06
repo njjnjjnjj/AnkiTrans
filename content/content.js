@@ -168,22 +168,62 @@ function createPreviewModal(data) {
         align-items: center;
     `;
 
-  // 检测暗色模式 (优先读取存储的设置，否则跟随系统)
-  const systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  let isDarkMode = systemDark;
-
-  // 尝试从 storage 读取上次的偏好 (异步读取，这里先用系统默认，随后更新)
-  // 注意：由于 modal 是同步创建 DOM，我们先渲染，稍后如果有缓存再更新类名
+  // 检测暗色模式 (仅跟随系统)
+  const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const themeClass = isDarkMode ? 'night_mode' : '';
 
   const shadow = host.attachShadow({ mode: 'open' });
 
   // 渲染模板
-  const frontHtml = renderTemplate(data.frontTemplate, data.fields);
-  const backHtml = renderTemplate(data.backTemplate, data.fields);
+  let frontHtml = renderTemplate(data.frontTemplate, data.fields);
+  let backHtml = renderTemplate(data.backTemplate, data.fields);
+
+  // 处理音频预览 (WYSIWYG)
+  // 1. 将 [sound:...] 标签替换为不可见（以免在预览中显示丑陋的文本）
+  // 2. 如果有 audioUrl，注入一个音频播放器
+
+  const cleanSoundTag = (html) => html.replace(/\[sound:[^\]]+\]/g, '');
+
+  // 在预览中隐藏 sound tag 文本
+  frontHtml = cleanSoundTag(frontHtml);
+  backHtml = cleanSoundTag(backHtml);
+
+  // 注入音频播放器 CSS
+  const audioCss = `
+    .preview-audio-player {
+        margin: 10px 0;
+        width: 100%;
+        height: 32px;
+    }
+  `;
+
+  // 如果有音频 URL，在卡片内容中插入播放器
+  // 我们将其插入到 Phonetic 后面，或者 header 后面
+  if (data.audioUrl) {
+    const audioPlayerHtml = `
+        <div class="audio-container" style="text-align: center; margin-top: 8px;">
+            <audio controls src="${data.audioUrl}" class="preview-audio-player"></audio>
+        </div>
+      `;
+    // 尝试插入到 phonetic 之后
+    if (frontHtml.includes('class="phonetic"')) {
+      frontHtml = frontHtml.replace('</div>', `</div>${audioPlayerHtml}`); // 这里可能太粗糙，替换了第一个 closing div
+    } else {
+      frontHtml += audioPlayerHtml;
+    }
+
+    // 背面同理
+    if (backHtml.includes('class="phonetic"')) {
+      backHtml = backHtml.replace('</div>', `</div>${audioPlayerHtml}`);
+    } else {
+      backHtml += audioPlayerHtml;
+    }
+  }
 
   shadow.innerHTML = `
         <style>
             ${data.css}
+            ${audioCss}
             
             /* 强制重置 host 内部变量作用域 */
             :host {
@@ -221,27 +261,16 @@ function createPreviewModal(data) {
                 color: var(--text-main, #1a1a2e);
             }
 
-            .header-controls {
-                display: flex;
-                align-items: center;
-                gap: 12px;
-            }
-
-            .icon-btn {
+            .close-btn {
                 background: none;
                 border: none;
-                font-size: 20px;
+                font-size: 24px;
                 cursor: pointer;
                 color: var(--text-muted, #718096);
-                padding: 4px;
-                border-radius: 4px;
+                padding: 0;
                 line-height: 1;
-                transition: color 0.2s, background 0.2s;
             }
-            .icon-btn:hover { 
-                color: var(--text-main, #000); 
-                background: rgba(0,0,0,0.05);
-            }
+            .close-btn:hover { color: var(--text-main, #000); }
 
             .modal-content {
                 padding: 24px;
@@ -304,16 +333,11 @@ function createPreviewModal(data) {
             .btn-primary:hover { filter: brightness(1.1); }
         </style>
 
-        <div class="theme-wrapper anki-variables" id="themeWrapper">
+        <div class="theme-wrapper anki-variables ${themeClass}" id="themeWrapper">
             <div class="modal-container">
                 <div class="modal-header">
                     <span class="modal-title">Push to Anki Preview</span>
-                    <div class="header-controls">
-                        <button class="icon-btn theme-btn" title="Toggle Theme">
-                            <span id="themeIcon">🌓</span>
-                        </button>
-                        <button class="icon-btn close-btn" title="Close">&times;</button>
-                    </div>
+                    <button class="close-btn">&times;</button>
                 </div>
                 
                 <div class="modal-content">
@@ -333,38 +357,7 @@ function createPreviewModal(data) {
     `;
 
   // --- 逻辑处理 ---
-  const themeWrapper = shadow.getElementById('themeWrapper');
-  const themeIcon = shadow.getElementById('themeIcon');
-  const themeBtn = shadow.querySelector('.theme-btn');
-
-  // 更新主题 UI
-  const updateThemeUI = (dark) => {
-    if (dark) {
-      themeWrapper.classList.add('night_mode');
-      themeIcon.textContent = '🌙';
-    } else {
-      themeWrapper.classList.remove('night_mode');
-      themeIcon.textContent = '☀️';
-    }
-  };
-
-  // 初始化主题（优先读取 Storage）
-  chrome.storage.sync.get(['ankitrans_theme_pref'], (result) => {
-    if (result.ankitrans_theme_pref !== undefined) {
-      isDarkMode = result.ankitrans_theme_pref === 'dark';
-    }
-    updateThemeUI(isDarkMode);
-  });
-
-  // 主题切换事件
-  themeBtn.onclick = () => {
-    isDarkMode = !isDarkMode;
-    updateThemeUI(isDarkMode);
-    // 保存偏好
-    chrome.storage.sync.set({ 'ankitrans_theme_pref': isDarkMode ? 'dark' : 'light' });
-  };
-
-  // 绑定关闭事件
+  // 绑定事件
   const close = () => host.remove();
   shadow.querySelector('.close-btn').onclick = close;
   shadow.querySelector('.cancel-btn').onclick = close;

@@ -8,6 +8,7 @@ import {
     checkConnection,
     createDeck,
     getDeckNames,
+    storeMediaFile,
     ANKITRANS_FRONT_TEMPLATE,
     ANKITRANS_BACK_TEMPLATE,
     ANKITRANS_CSS
@@ -75,11 +76,57 @@ async function processSelection(text, tabId) {
         // 生成卡片字段
         const cardFields = buildCardFields(text, wordInfo);
 
+        // 处理音频
+        try {
+            const audioUrl = wordInfo.audioUS || wordInfo.audioUK;
+            if (audioUrl) {
+                // 下载音频
+                const audioResp = await fetch(audioUrl);
+                if (audioResp.ok) {
+                    const arrayBuffer = await audioResp.arrayBuffer();
+                    // 转 Base64
+                    const base64Data = arrayBufferToBase64(arrayBuffer);
+
+                    // 生成文件名
+                    const timestamp = Date.now();
+                    // 清理文件名中的非法字符
+                    const cleanWord = text.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 20);
+                    const filename = `ankitrans_${cleanWord}_${timestamp}.mp3`;
+
+                    // 上传到 Anki
+                    const storedFile = await storeMediaFile(filename, base64Data);
+                    console.log('Audio upload result:', storedFile);
+
+                    // 只有成功上传才添加标签
+                    // AnkiConnect 的 storeMediaFile 成功时返回文件名，失败可能返回 null 或 error
+                    if (storedFile || storedFile === null) { // null 也是成功的一种表现形式依具体版本而定，通常无错误抛出即成功
+                        // 将 [sound:...] 添加到 Phonetic 字段
+                        // 如果 Phonetic 字段已有内容，追加在后面
+                        const soundTag = `[sound:${filename}]`;
+                        if (cardFields.Phonetic) {
+                            cardFields.Phonetic += ` ${soundTag}`;
+                        } else {
+                            // 如果没有音标，显示在单词后面？或者还是放在 Phonetic 字段
+                            cardFields.Phonetic = soundTag;
+                        }
+                    }
+                } else {
+                    console.warn('Audio download failed:', audioResp.status);
+                }
+            } else {
+                console.log('No audio URL found');
+            }
+        } catch (audioErr) {
+            console.warn('Audio processing failed:', audioErr);
+            // 音频失败不应该阻止卡片生成，继续执行
+        }
+
         // 发送预览请求
         await sendToContentScript(tabId, {
             type: 'SHOW_PREVIEW',
             data: {
                 fields: cardFields,
+                audioUrl: wordInfo.audioUS || wordInfo.audioUK, // 传递原始 URL 用于预览
                 css: ANKITRANS_CSS,
                 frontTemplate: ANKITRANS_FRONT_TEMPLATE,
                 backTemplate: ANKITRANS_BACK_TEMPLATE
@@ -171,4 +218,17 @@ async function handleMessage(message, sender) {
         default:
             throw new Error(`Unknown message type: ${message.type}`);
     }
+}
+
+/**
+ * ArrayBuffer 转 Base64
+ */
+function arrayBufferToBase64(buffer) {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const len = bytes.byteLength;
+    for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
 }

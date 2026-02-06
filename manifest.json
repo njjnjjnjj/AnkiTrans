@@ -10,7 +10,9 @@
     "notifications"
   ],
   "host_permissions": [
-    "http://localhost:8765/*"
+    "http://localhost:8765/*",
+    "https://cn.bing.com/*",
+    "https://*.chinacloudapi.cn/*"
   ],
   "background": {
     "service_worker": "background/background.js",
