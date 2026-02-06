@@ -6,9 +6,6 @@
 // DOM 元素
 const connectionStatus = document.getElementById('connection-status');
 const deckSelect = document.getElementById('deck-select');
-const modelSelect = document.getElementById('model-select');
-const frontFieldSelect = document.getElementById('front-field');
-const backFieldSelect = document.getElementById('back-field');
 const langSelect = document.getElementById('lang-select');
 const engineSelect = document.getElementById('engine-select');
 const deepLConfig = document.getElementById('deepl-config');
@@ -64,67 +61,6 @@ async function loadDecks() {
 }
 
 /**
- * 加载笔记类型列表
- */
-async function loadModels() {
-    try {
-        const { models } = await sendMessage({ type: 'GET_MODELS' });
-        modelSelect.innerHTML = models
-            .map(model => `<option value="${model}">${model}</option>`)
-            .join('');
-
-        const settings = await sendMessage({ type: 'GET_SETTINGS' });
-        if (settings.modelName && models.includes(settings.modelName)) {
-            modelSelect.value = settings.modelName;
-        } else if (models.includes('Basic')) {
-            modelSelect.value = 'Basic';
-        }
-
-        // 加载选中模型的字段
-        await loadModelFields(modelSelect.value);
-    } catch (error) {
-        console.error('Failed to load models:', error);
-        modelSelect.innerHTML = '<option value="">无法加载笔记类型</option>';
-    }
-}
-
-/**
- * 加载指定模型的字段列表
- */
-async function loadModelFields(modelName) {
-    if (!modelName) return;
-
-    try {
-        const { fields } = await sendMessage({ type: 'GET_MODEL_FIELDS', modelName });
-
-        frontFieldSelect.innerHTML = fields
-            .map(field => `<option value="${field}">${field}</option>`)
-            .join('');
-
-        backFieldSelect.innerHTML = fields
-            .map(field => `<option value="${field}">${field}</option>`)
-            .join('');
-
-        // 恢复保存的字段设置，或使用默认值
-        const settings = await sendMessage({ type: 'GET_SETTINGS' });
-
-        if (settings.frontField && fields.includes(settings.frontField)) {
-            frontFieldSelect.value = settings.frontField;
-        } else if (fields.length >= 1) {
-            frontFieldSelect.value = fields[0];
-        }
-
-        if (settings.backField && fields.includes(settings.backField)) {
-            backFieldSelect.value = settings.backField;
-        } else if (fields.length >= 2) {
-            backFieldSelect.value = fields[1];
-        }
-    } catch (error) {
-        console.error('Failed to load model fields:', error);
-    }
-}
-
-/**
  * 初始化设置
  */
 async function initSettings() {
@@ -161,9 +97,6 @@ function toggleDeepLConfig(show) {
 async function saveSettings() {
     const settings = {
         deckName: deckSelect.value,
-        modelName: modelSelect.value,
-        frontField: frontFieldSelect.value,
-        backField: backFieldSelect.value,
         targetLang: langSelect.value,
         translationEngine: engineSelect.value,
         deepLApiKey: deepLKey.value,
@@ -234,7 +167,6 @@ async function init() {
 
         if (connected) {
             await loadDecks();
-            await loadModels();
             await initSettings();
         }
     } catch (error) {
@@ -245,12 +177,6 @@ async function init() {
 
 // 事件监听
 deckSelect.addEventListener('change', saveSettings);
-modelSelect.addEventListener('change', async (e) => {
-    await loadModelFields(e.target.value);
-    saveSettings();
-});
-frontFieldSelect.addEventListener('change', saveSettings);
-backFieldSelect.addEventListener('change', saveSettings);
 langSelect.addEventListener('change', saveSettings);
 engineSelect.addEventListener('change', (e) => {
     toggleDeepLConfig(e.target.value === 'deepl');

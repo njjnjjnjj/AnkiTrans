@@ -4,15 +4,13 @@
  */
 
 import { translate } from '../lib/translator.js';
-import { addNote, checkConnection, createDeck, getDeckNames, getModelNames, getModelFieldNames } from '../lib/anki-connect.js';
+import { addNoteWithFields, checkConnection, createDeck, getDeckNames } from '../lib/anki-connect.js';
+import { lookupWord, buildCardFields } from '../lib/dictionary.js';
 
 // 默认设置
 const DEFAULT_SETTINGS = {
     targetLang: 'zh-CN',
     deckName: 'AnkiTrans',
-    modelName: '',      // 用户选择的笔记类型
-    frontField: '',     // 正面字段名
-    backField: '',      // 背面字段名
     translationEngine: 'google_free',
     deepLApiKey: '',
 };
@@ -71,21 +69,28 @@ async function processSelection(text, tabId) {
             throw new Error('无法连接到 Anki，请确保 Anki 已运行且安装了 AnkiConnect 插件');
         }
 
-        // 翻译文本
-        const { translation, detectedLang } = await translate(text, {
-            engine: settings.translationEngine,
-            targetLang: settings.targetLang,
-            apiKey: settings.deepLApiKey
-        });
+        // 并行执行翻译和词典查询
+        const [translateResult, wordInfo] = await Promise.all([
+            translate(text, {
+                engine: settings.translationEngine,
+                targetLang: settings.targetLang,
+                apiKey: settings.deepLApiKey
+            }),
+            lookupWord(text)
+        ]);
+
+        const { translation, detectedLang } = translateResult;
+
+        // 生成独立字段对象
+        const cardFields = buildCardFields(text, wordInfo, translation);
 
         // 确保牌组存在
         await createDeck(settings.deckName);
 
-        // 添加笔记
-        const noteId = await addNote({
+        // 使用 AnkiTrans 6 字段模型添加笔记
+        const noteId = await addNoteWithFields({
             deckName: settings.deckName,
-            front: text,
-            back: translation,
+            fields: cardFields,
             tags: [`source:${detectedLang}`],
         });
 
@@ -106,6 +111,7 @@ async function processSelection(text, tabId) {
         });
     }
 }
+
 
 /**
  * 发送消息到 content script
@@ -154,12 +160,6 @@ async function handleMessage(message, sender) {
         case 'GET_DECKS':
             return { decks: await getDeckNames() };
 
-        case 'GET_MODELS':
-            return { models: await getModelNames() };
-
-        case 'GET_MODEL_FIELDS':
-            return { fields: await getModelFieldNames(message.modelName) };
-
         case 'GET_SETTINGS':
             return await getSettings();
 
@@ -169,19 +169,26 @@ async function handleMessage(message, sender) {
 
         case 'ADD_NOTE':
             const settings = await getSettings();
-            const { translation } = await translate(message.text, {
-                engine: settings.translationEngine,
-                targetLang: settings.targetLang,
-                apiKey: settings.deepLApiKey
-            });
+
+            // 并行执行翻译和词典查询
+            const [translateResult, wordInfo] = await Promise.all([
+                translate(message.text, {
+                    engine: settings.translationEngine,
+                    targetLang: settings.targetLang,
+                    apiKey: settings.deepLApiKey
+                }),
+                lookupWord(message.text)
+            ]);
+
+            const { translation } = translateResult;
+            const cardFields = buildCardFields(message.text, wordInfo, translation);
+
             await createDeck(settings.deckName);
-            const noteId = await addNote({
+
+            // 使用 AnkiTrans 6 字段模型添加笔记
+            const noteId = await addNoteWithFields({
                 deckName: settings.deckName,
-                modelName: settings.modelName,
-                frontField: settings.frontField,
-                backField: settings.backField,
-                front: message.text,
-                back: translation,
+                fields: cardFields,
             });
             return { success: true, noteId, translation };
 
