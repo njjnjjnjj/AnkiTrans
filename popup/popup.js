@@ -127,7 +127,48 @@ function escapeHtml(text) {
 /**
  * 初始化
  */
+// DOM Elements (New)
+const mainView = document.getElementById('main-view');
+const onboardingView = document.getElementById('onboarding-view');
+const startBtn = document.getElementById('start-btn');
+
+/**
+ * 切换视图
+ */
+function switchView(view) {
+    if (view === 'main') {
+        mainView.classList.remove('hidden');
+        onboardingView.classList.add('hidden');
+        // Ensure footer is visible/adjusted if needed, but styling handles layout
+    } else {
+        mainView.classList.add('hidden');
+        onboardingView.classList.remove('hidden');
+    }
+}
+
+/**
+ * 初始化
+ */
 async function init() {
+    try {
+        // Check if user has seen onboarding
+        const { hasSeenOnboarding } = await chrome.storage.sync.get('hasSeenOnboarding');
+
+        if (!hasSeenOnboarding) {
+            switchView('onboarding');
+        } else {
+            switchView('main');
+            // proceed to load connection only if in main view
+            checkAndLoad();
+        }
+
+    } catch (error) {
+        console.error('Initialization error:', error);
+        updateConnectionStatus(false);
+    }
+}
+
+async function checkAndLoad() {
     try {
         const { connected } = await sendMessage({ type: 'CHECK_CONNECTION' });
         updateConnectionStatus(connected);
@@ -136,10 +177,17 @@ async function init() {
             await loadDecks();
         }
     } catch (error) {
-        console.error('Initialization error:', error);
+        console.error('Connection check failed:', error);
         updateConnectionStatus(false);
     }
 }
+
+// Onboarding Button
+startBtn.addEventListener('click', async () => {
+    await chrome.storage.sync.set({ hasSeenOnboarding: true });
+    switchView('main');
+    checkAndLoad();
+});
 
 // 事件监听
 deckSelect.addEventListener('change', saveSettings);

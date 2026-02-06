@@ -22,12 +22,14 @@
       </div>
     </header>
 
-    <main class="main">
+    <!-- Main Functional View -->
+    <main id="main-view" class="main hidden">
       <section class="section">
         <label class="label" for="deck-select">目标牌组</label>
         <select id="deck-select" class="select">
           <option value="">加载中...</option>
         </select>
+        <p class="section-tip">请先在此处选择一个牌组以启用功能。</p>
       </section>
 
       <section class="section">
@@ -41,6 +43,42 @@
       <div id="result-area" class="result-area hidden">
         <div id="result-content"></div>
       </div>
+    </main>
+
+    <!-- Onboarding View (First Run) -->
+    <main id="onboarding-view" class="main">
+      <div class="intro-card" style="padding: 15px; margin-bottom: 15px;">
+        <h2 style="font-size: 16px; margin-bottom: 8px;">👋 欢迎使用 AnkiTrans</h2>
+        <p style="font-size: 13px; opacity: 0.9;">三步开启极速划词制卡之旅：</p>
+      </div>
+
+      <ul class="steps-list" style="gap: 12px;">
+        <li style="padding: 12px; gap: 12px;">
+          <div class="step-num" style="width: 24px; height: 24px; font-size: 12px;">1</div>
+          <div class="step-content">
+            <h4 style="font-size: 13px;">启动 Anki</h4>
+            <p style="font-size: 12px;">确保已安装 AnkiConnect 插件。</p>
+          </div>
+        </li>
+        <li style="padding: 12px; gap: 12px;">
+          <div class="step-num" style="width: 24px; height: 24px; font-size: 12px;">2</div>
+          <div class="step-content">
+            <h4 style="font-size: 13px;">选择牌组</h4>
+            <p style="font-size: 12px;">点击下方按钮进入主界面，选择目标牌组。</p>
+          </div>
+        </li>
+        <li style="padding: 12px; gap: 12px;">
+          <div class="step-num" style="width: 24px; height: 24px; font-size: 12px;">3</div>
+          <div class="step-content">
+            <h4 style="font-size: 13px;">开始制卡</h4>
+            <p style="font-size: 12px;">
+              选中单词按 <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>A</kbd>
+            </p>
+          </div>
+        </li>
+      </ul>
+
+      <button id="start-btn" class="btn btn-primary" style="width: 100%; margin-top: 20px; padding: 12px;">开始使用</button>
     </main>
 
     <footer class="footer">

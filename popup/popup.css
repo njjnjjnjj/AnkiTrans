@@ -353,5 +353,50 @@ kbd {
   font-size: 12px;
 }
 
+/* Onboarding Styles (Copied & Adapted from options.css) */
+.steps-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.steps-list li {
+  display: flex;
+  background: var(--input-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  align-items: center;
+}
+
+.step-num {
+  background: var(--bg-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: #667eea;
+  flex-shrink: 0;
+  border: 2px solid #e0e7ff;
+}
+
+.step-content h4 {
+  margin: 0 0 2px 0;
+  color: var(--text-color);
+}
+
+.step-content p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.intro-card {
+  text-align: center;
+  background: var(--primary-gradient);
+  border-radius: 12px;
+  color: white;
+  box-shadow: 0 4px 10px rgba(100, 100, 255, 0.2);
+}
+
 .hidden { display: none !important; }
 
