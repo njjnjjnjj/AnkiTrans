@@ -266,6 +266,14 @@ async function handleMessage(message, sender) {
                 translation: message.fields.Translation
             };
 
+        case 'TEST_LOOKUP':
+            const wordInfo = await lookupWord(message.word);
+            if (!wordInfo) {
+                throw new Error('Lookup failed');
+            }
+            const fields = buildCardFields(message.word, wordInfo);
+            return { fields };
+
         default:
             throw new Error(`Unknown message type: ${message.type}`);
     }

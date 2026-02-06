@@ -157,21 +157,26 @@
                 <div class="mock-card">
                     <!-- Front -->
                     <div class="card-face front">
-                        <div class="word-text">hello</div>
-                        <div class="phonetics">
+                        <div class="word-text" id="mock-word">hello</div>
+                        <div class="phonetics" id="mock-phonetic">
                             <span style="margin-right: 10px;">🇺🇸 [həˈloʊ]</span>
                             <span>🇬🇧 [həˈləʊ]</span>
                         </div>
                     </div>
                     <!-- Back (Simplified) -->
                     <div class="card-face back">
-                        <div style="margin-bottom: 12px;">
+                        <div style="margin-bottom: 12px;" id="mock-translation">
                             <span style="color: #667eea; font-weight: bold; margin-right: 8px;">int.</span>
                             <span>你好；喂；您好</span>
                         </div>
-                        <div class="example-box">
+                        <div class="example-box" id="mock-example">
                             <div style="margin-bottom: 4px;">Hello, who's speaking, please?</div>
                             <div style="opacity: 0.8;">喂，请问是哪位？</div>
+                        </div>
+                        <div style="text-align: right; margin-top: 8px;">
+                            <button id="refresh-mock-btn" class="icon-btn" style="display: inline-flex; width: auto; font-size: 12px; padding: 4px 8px; border-radius: 4px; background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-secondary);" title="刷新示例数据">
+                                🔄 刷新数据
+                            </button>
                         </div>
                     </div>
                 </div>
