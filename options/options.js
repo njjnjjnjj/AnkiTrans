@@ -65,89 +65,156 @@ async function updateMockCard() {
     const host = document.getElementById('preview-container-host');
     if (!host) return;
 
-    host.innerHTML = '<div style="color: var(--text-secondary); padding: 20px;">⏳ 正在从必应词典获取最新数据... (hello)</div>';
+    // Use Shadow DOM for isolation
+    let shadow = host.shadowRoot;
+    if (!shadow) {
+        shadow = host.attachShadow({ mode: 'open' });
+    }
+
+    // Checking theme for class injection (though options page handles its own theme mostly, 
+    // but inner card needs .night_mode class if applicable)
+    // Actually, options page uses :root variables. 
+    // ANKITRANS_CSS also has :root variables. 
+    // Inside Shadow DOM, :root refers to the shadow root itself. Perfect.
+
+    // Check if system is dark mode for the .night_mode class (Anki style)
+    const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const themeClass = isDarkMode ? 'night_mode' : '';
+
+    // Initial loading state in shadow dom
+    shadow.innerHTML = `
+        <style>
+            :host { 
+                display: block; 
+                width: 100%;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            }
+            .loading { 
+                color: #718096; 
+                padding: 20px; 
+                text-align: center; 
+            }
+        </style>
+        <div class="loading">⏳ 正在从必应词典获取最新数据... (hello)</div>
+    `;
 
     try {
-        // Fetch real data for 'hello'
         const response = await chrome.runtime.sendMessage({ type: 'TEST_LOOKUP', word: 'hello' });
 
         if (response && response.fields) {
             const fields = response.fields;
 
-            // Note: We don't have raw audio URLs in 'fields' directly if we only used buildCardFields.
-            // But TEST_LOOKUP in background.js returns { fields }. 
-            // We need background.js to also return audioUS/audioUK separately if we want to play them,
-            // OR extracting them from the 'Phonetic' field if we successfully embedded them.
-            // background's TEST_LOOKUP logic just calls lookupWord + buildCardFields.
-            // Using a hack to re-lookup or assume urls based on standard bing format? 
-            // Better: update background to return raw audio urls too.
-            // For now, let's see if we can extract from [sound:...] if present.
-            // Actually, buildCardFields puts [sound:...] only if we downloaded them. In TEST_LOOKUP, we do NOT download.
-            // So fields.Phonetic has just spans.
-            // We need to request audioURLs from background or modify TEST_LOOKUP.
-
-            // Let's assume for this "Preview Consistency" task, we want to match content.js
-            // content.js receives { fields, audioUS, audioUK... }
-
-            // To be perfect, we should ask background to return full wordInfo or audio links.
-            // Let's modify background TEST_LOOKUP if possible, but I am editing options.js now.
-            // I will use a fallback or try to update background in next step if needed.
-            // Wait, I can't update background in this turn if I didn't plan it? I can try to infer or re-fetch?
-            // Actually, let's just make it look right. Audio might not play if URL is missing.
-
-            // Render logic
             let frontHtml = renderTemplate(ANKITRANS_FRONT_TEMPLATE, fields);
             let backHtml = renderTemplate(ANKITRANS_BACK_TEMPLATE, fields);
 
-            // CSS Variables Wrapper
-            // Note: options.css handles --bg-card etc? 
-            // options.css defines :root. ANKITRANS_CSS also defines :root.
-            // We need to scoped this.
-
-            const html = `
-                <div class="modal-container">
-                    <div class="modal-header">
-                        <span class="modal-title">Push to Anki Preview</span>
-                        <div class="close-btn">&times;</div>
-                    </div>
-                    <div class="modal-content">
-                        <div class="preview-label-internal">Front</div>
-                        <div class="card-preview">${frontHtml}</div>
-                        <div class="preview-label-internal">Back</div>
-                        <div class="card-preview">${backHtml}</div>
-                    </div>
-                    <div class="refresh-btn-container">
-                         <button id="refresh-mock-btn" class="btn btn-primary" style="background: var(--primary-gradient);">
-                            🔄 刷新数据 (Refresh)
-                         </button>
-                    </div>
-                </div>
-                <style>
-                    ${ANKITRANS_CSS}
-                    /* Overrides to ensure it fits in options page */
-                    .card { 
-                        box-shadow: none; 
-                        margin: 0; 
-                        width: 100%; 
-                        max-width: 100% !important; 
-                        border: none; 
-                        box-sizing: border-box;
-                    }
-                </style>
+            // Audio CSS (from content.js)
+            const audioCss = `
+                .audio-btn {
+                    cursor: pointer; display: inline-block; margin-left: 4px;
+                    transition: transform 0.1s; font-size: 1.1em; vertical-align: middle;
+                }
+                .audio-btn:hover { opacity: 0.8; transform: scale(1.1); }
             `;
 
-            host.innerHTML = html;
+            // Modal/Container CSS (Copied from options.css mostly, but scoped here)
+            // We need to duplicate the modal styles here because external CSS won't penetrate Shadow DOM 
+            // unless we use parts/slotted, but simple replication is safer for total isolation.
+            const containerCss = `
+                .modal-container {
+                  background: var(--bg-card, #fff);
+                  color: var(--text-main, #333);
+                  width: auto;
+                  max-width: 100%;
+                  border-radius: 12px;
+                  box-shadow: 0 4px 15px rgba(0,0,0,0.05); /* Softer shadow for embedded */
+                  display: flex;
+                  flex-direction: column;
+                  overflow: hidden;
+                  border: 1px solid var(--border, #e2e8f0);
+                  box-sizing: border-box;
+                }
+                .modal-header {
+                  padding: 12px 20px;
+                  border-bottom: 1px solid var(--border, #e2e8f0);
+                  display: flex; justify-content: space-between; align-items: center;
+                  background: var(--bg-block, #f7fafc);
+                }
+                .modal-title { font-weight: 600; font-size: 14px; }
+                .close-btn { opacity: 0.5; cursor: not-allowed; }
+                .modal-content { padding: 20px; }
+                .preview-label-internal {
+                    font-size: 11px; text-transform: uppercase; color: var(--text-muted, #999);
+                    margin: 12px 0 6px; letter-spacing: 0.05em; font-weight: 600;
+                }
+                .card-preview {
+                    border: 1px dashed var(--border, #e2e8f0);
+                    padding: 15px; border-radius: 8px; margin-bottom: 10px;
+                    background: var(--bg-card, #fff);
+                }
+                .modal-footer {
+                    padding: 12px 20px;
+                    border-top: 1px solid var(--border, #e2e8f0);
+                    display: flex; justify-content: center;
+                    background: var(--bg-block, #f7fafc);
+                }
+                button {
+                    padding: 6px 16px; border-radius: 6px; font-weight: 500; cursor: pointer;
+                    background: #667eea; color: white; border: none; font-size: 13px;
+                }
+                button:hover { opacity: 0.9; }
+                
+                /* Ensure card content doesn't overflow */
+                .card { box-shadow: none !important; margin: 0 !important; width: 100% !important; max-width: 100% !important; border: none !important; padding: 0 !important; }
+            `;
 
-            const refreshBtn = document.getElementById('refresh-mock-btn');
-            refreshBtn.onclick = updateMockCard;
+            shadow.innerHTML = `
+                <style>
+                    ${ANKITRANS_CSS}
+                    ${audioCss}
+                    ${containerCss}
+                </style>
+                <div class="theme-wrapper anki-variables ${themeClass}">
+                    <div class="modal-container">
+                        <div class="modal-header">
+                            <span class="modal-title">Push to Anki Preview</span>
+                            <div class="close-btn">&times;</div>
+                        </div>
+                        <div class="modal-content">
+                            <div class="preview-label-internal">Front</div>
+                            <div class="card-preview">${frontHtml}</div>
+                            <div class="preview-label-internal">Back</div>
+                            <div class="card-preview">${backHtml}</div>
+                        </div>
+                        <div class="modal-footer">
+                             <button id="refresh-mock-btn">🔄 刷新数据 (Refresh)</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Re-bind click event inside shadow root
+            const refreshBtn = shadow.getElementById('refresh-mock-btn');
+            if (refreshBtn) {
+                refreshBtn.onclick = updateMockCard;
+            }
 
         } else {
-            host.innerHTML = '<div>Load failed.</div><button id="retry">Retry</button>';
-            document.getElementById('retry').onclick = updateMockCard;
+            shadow.innerHTML = `
+                <style>
+                    button { padding: 8px 16px; margin-top: 10px; cursor: pointer; }
+                </style>
+                <div style="text-align: center; color: #e53e3e; padding: 20px;">
+                    Load failed. <br>
+                    <button id="retry">Retry</button>
+                </div>
+            `;
+            shadow.getElementById('retry').onclick = updateMockCard;
         }
 
     } catch (e) {
         console.error('Mock preview error', e);
-        host.innerHTML = `<div>Error: ${e.message}</div>`;
+        if (shadow) {
+            shadow.innerHTML = `<div style="padding: 20px; color: red;">Error: ${e.message}</div>`;
+        }
     }
 }
