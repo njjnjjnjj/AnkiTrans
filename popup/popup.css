@@ -179,13 +179,17 @@ body {
     border: 1px solid var(--border-color);
     color: var(--text-secondary);
     border-radius: 8px;
-    width: 42px;
+    width: 42px; /* Fixed width */
+    height: 42px; /* Fixed height to match likely selectivity height or explicitly set selectivity height too */
+    padding: 0;   /* Remove padding to let flexbox center perfectly */
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 16px; /* Slightly larger icon */
+    line-height: 1;  /* Reset line height */
     transition: all 0.2s;
+    flex-shrink: 0;  /* Prevent shrinking */
 }
 .icon-btn-secondary:hover {
     background: #e0e7ff;
