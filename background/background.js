@@ -3,16 +3,12 @@
  * 处理右键菜单、消息传递和 API 协调
  */
 
-import { translate } from '../lib/translator.js';
 import { addNoteWithFields, checkConnection, createDeck, getDeckNames } from '../lib/anki-connect.js';
 import { lookupWord, buildCardFields } from '../lib/dictionary.js';
 
 // 默认设置
 const DEFAULT_SETTINGS = {
-    targetLang: 'zh-CN',
     deckName: 'AnkiTrans',
-    translationEngine: 'google_free',
-    deepLApiKey: '',
 };
 
 /**
@@ -32,12 +28,6 @@ chrome.runtime.onInstalled.addListener(() => {
         title: '添加到 Anki',
         contexts: ['selection'],
     });
-
-    chrome.contextMenus.create({
-        id: 'ankitrans-translate',
-        title: '翻译并添加到 Anki',
-        contexts: ['selection'],
-    });
 });
 
 /**
@@ -48,13 +38,13 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 
     const selectedText = info.selectionText.trim();
 
-    if (info.menuItemId === 'ankitrans-add' || info.menuItemId === 'ankitrans-translate') {
+    if (info.menuItemId === 'ankitrans-add') {
         await processSelection(selectedText, tab.id);
     }
 });
 
 /**
- * 处理选中文本：翻译并添加到 Anki
+ * 处理选中文本：查词并添加到 Anki
  */
 async function processSelection(text, tabId) {
     try {
@@ -69,29 +59,25 @@ async function processSelection(text, tabId) {
             throw new Error('无法连接到 Anki，请确保 Anki 已运行且安装了 AnkiConnect 插件');
         }
 
-        // 并行执行翻译和词典查询
-        const [translateResult, wordInfo] = await Promise.all([
-            translate(text, {
-                engine: settings.translationEngine,
-                targetLang: settings.targetLang,
-                apiKey: settings.deepLApiKey
-            }),
-            lookupWord(text)
-        ]);
+        // 查询必应词典
+        const wordInfo = await lookupWord(text);
 
-        const { translation, detectedLang } = translateResult;
+        if (!wordInfo || wordInfo.definitions.length === 0) {
+            throw new Error(`未找到 "${text}" 的释义`);
+        }
 
-        // 生成独立字段对象
-        const cardFields = buildCardFields(text, wordInfo, translation);
+        // 生成卡片字段
+        const cardFields = buildCardFields(text, wordInfo);
+        const translation = cardFields.Translation || '无翻译';
 
         // 确保牌组存在
         await createDeck(settings.deckName);
 
-        // 使用 AnkiTrans 6 字段模型添加笔记
+        // 添加笔记
         const noteId = await addNoteWithFields({
             deckName: settings.deckName,
             fields: cardFields,
-            tags: [`source:${detectedLang}`],
+            tags: ['bing-dict'],
         });
 
         // 通知成功
@@ -112,7 +98,6 @@ async function processSelection(text, tabId) {
     }
 }
 
-
 /**
  * 发送消息到 content script
  */
@@ -122,7 +107,6 @@ async function sendToContentScript(tabId, message) {
     } catch (error) {
         console.warn('Failed to send message to content script, falling back to notification:', error);
 
-        // 如果无法连接到 content script (例如在特殊页面)，使用系统通知
         if (message.type === 'ERROR') {
             chrome.notifications.create({
                 type: 'basic',
@@ -135,7 +119,7 @@ async function sendToContentScript(tabId, message) {
                 type: 'basic',
                 iconUrl: 'icons/icon128.png',
                 title: '已添加到 Anki',
-                message: `${message.text}\n翻译: ${message.translation}`
+                message: `${message.text}\n${message.translation}`
             });
         }
     }
@@ -149,7 +133,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         .then(sendResponse)
         .catch(error => sendResponse({ error: error.message }));
 
-    return true; // 保持消息通道开放
+    return true;
 });
 
 async function handleMessage(message, sender) {
@@ -170,22 +154,18 @@ async function handleMessage(message, sender) {
         case 'ADD_NOTE':
             const settings = await getSettings();
 
-            // 并行执行翻译和词典查询
-            const [translateResult, wordInfo] = await Promise.all([
-                translate(message.text, {
-                    engine: settings.translationEngine,
-                    targetLang: settings.targetLang,
-                    apiKey: settings.deepLApiKey
-                }),
-                lookupWord(message.text)
-            ]);
+            // 查询必应词典
+            const wordInfo = await lookupWord(message.text);
 
-            const { translation } = translateResult;
-            const cardFields = buildCardFields(message.text, wordInfo, translation);
+            if (!wordInfo || wordInfo.definitions.length === 0) {
+                throw new Error(`未找到 "${message.text}" 的释义`);
+            }
+
+            const cardFields = buildCardFields(message.text, wordInfo);
+            const translation = cardFields.Translation || '无翻译';
 
             await createDeck(settings.deckName);
 
-            // 使用 AnkiTrans 6 字段模型添加笔记
             const noteId = await addNoteWithFields({
                 deckName: settings.deckName,
                 fields: cardFields,

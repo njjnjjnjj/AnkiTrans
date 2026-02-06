@@ -6,10 +6,6 @@
 // DOM 元素
 const connectionStatus = document.getElementById('connection-status');
 const deckSelect = document.getElementById('deck-select');
-const langSelect = document.getElementById('lang-select');
-const engineSelect = document.getElementById('engine-select');
-const deepLConfig = document.getElementById('deepl-config');
-const deepLKey = document.getElementById('deepl-key');
 const quickText = document.getElementById('quick-text');
 const quickAddBtn = document.getElementById('quick-add-btn');
 const resultArea = document.getElementById('result-area');
@@ -61,45 +57,11 @@ async function loadDecks() {
 }
 
 /**
- * 初始化设置
- */
-async function initSettings() {
-    const settings = await sendMessage({ type: 'GET_SETTINGS' });
-
-    if (settings.targetLang) {
-        langSelect.value = settings.targetLang;
-    }
-
-    if (settings.translationEngine) {
-        engineSelect.value = settings.translationEngine;
-        toggleDeepLConfig(settings.translationEngine === 'deepl');
-    }
-
-    if (settings.deepLApiKey) {
-        deepLKey.value = settings.deepLApiKey;
-    }
-}
-
-/**
- * 切换 DeepL 配置显示
- */
-function toggleDeepLConfig(show) {
-    if (show) {
-        deepLConfig.classList.remove('hidden');
-    } else {
-        deepLConfig.classList.add('hidden');
-    }
-}
-
-/**
  * 保存设置
  */
 async function saveSettings() {
     const settings = {
         deckName: deckSelect.value,
-        targetLang: langSelect.value,
-        translationEngine: engineSelect.value,
-        deepLApiKey: deepLKey.value,
     };
     await sendMessage({ type: 'SAVE_SETTINGS', settings });
 }
@@ -118,7 +80,7 @@ function showResult(type, content) {
 async function quickAdd() {
     const text = quickText.value.trim();
     if (!text) {
-        showResult('error', '<div class="result-title">请输入内容</div>');
+        showResult('error', '<div class="result-title">请输入单词</div>');
         return;
     }
 
@@ -130,17 +92,17 @@ async function quickAdd() {
         const result = await sendMessage({ type: 'ADD_NOTE', text });
 
         showResult('success', `
-      <div class="result-title">✅ 添加成功</div>
-      <div><strong>原文：</strong>${escapeHtml(text)}</div>
-      <div><strong>翻译：</strong>${escapeHtml(result.translation)}</div>
-    `);
+            <div class="result-title">✅ 添加成功</div>
+            <div><strong>单词：</strong>${escapeHtml(text)}</div>
+            <div><strong>释义：</strong>${escapeHtml(result.translation)}</div>
+        `);
 
         quickText.value = '';
     } catch (error) {
         showResult('error', `
-      <div class="result-title">❌ 添加失败</div>
-      <div>${escapeHtml(error.message)}</div>
-    `);
+            <div class="result-title">❌ 添加失败</div>
+            <div>${escapeHtml(error.message)}</div>
+        `);
     } finally {
         quickAddBtn.disabled = false;
         quickAddBtn.textContent = '添加';
@@ -161,13 +123,11 @@ function escapeHtml(text) {
  */
 async function init() {
     try {
-        // 检查连接
         const { connected } = await sendMessage({ type: 'CHECK_CONNECTION' });
         updateConnectionStatus(connected);
 
         if (connected) {
             await loadDecks();
-            await initSettings();
         }
     } catch (error) {
         console.error('Initialization error:', error);
@@ -177,12 +137,6 @@ async function init() {
 
 // 事件监听
 deckSelect.addEventListener('change', saveSettings);
-langSelect.addEventListener('change', saveSettings);
-engineSelect.addEventListener('change', (e) => {
-    toggleDeepLConfig(e.target.value === 'deepl');
-    saveSettings();
-});
-deepLKey.addEventListener('change', saveSettings);
 quickAddBtn.addEventListener('click', quickAdd);
 quickText.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {

@@ -183,43 +183,67 @@ document.addEventListener('keydown', async (e) => {
     if (selection) {
       e.preventDefault();
 
+      // 检查扩展上下文是否有效
+      if (!chrome.runtime?.id) {
+        console.warn('AnkiTrans: Extension context invalidated. Please refresh the page.');
+        return;
+      }
+
       // 显示加载状态
       const loadingToast = showNotification('loading', `
                 <div style="font-weight: 600; margin-bottom: 4px;">正在处理...</div>
                 <div style="color: #666; font-size: 13px;">${escapeHtml(selection)}</div>
             `);
 
-      chrome.runtime.sendMessage({
-        type: 'ADD_NOTE',
-        text: selection,
-      }, response => {
-        // 移除加载通知
-        loadingToast.remove();
+      try {
+        chrome.runtime.sendMessage({
+          type: 'ADD_NOTE',
+          text: selection,
+        }, response => {
+          // 检查 chrome.runtime.lastError
+          if (chrome.runtime.lastError) {
+            loadingToast.remove();
+            showNotification('error', `
+              <div style="font-weight: 600; margin-bottom: 4px;">扩展已重新加载</div>
+              <div style="color: #666; font-size: 13px;">请刷新页面后重试</div>
+            `);
+            return;
+          }
 
-        if (response && response.error) {
-          showNotification('error', `
-                        <div style="font-weight: 600; margin-bottom: 4px;">添加失败</div>
-                        <div style="color: #666; font-size: 13px;">${escapeHtml(response.error)}</div>
-                    `);
-        } else if (response && response.translation) {
-          showNotification('success', `
-                        <div style="font-weight: 600; margin-bottom: 4px;">已添加到 Anki</div>
-                        <div style="margin-bottom: 6px;">
-                            <span style="color: #666;">原文：</span>
-                            <span>${escapeHtml(selection)}</span>
-                        </div>
-                        <div>
-                            <span style="color: #666;">翻译：</span>
-                            <span style="color: #22c55e;">${escapeHtml(response.translation)}</span>
-                        </div>
-                    `);
-        } else {
-          showNotification('error', `
-                        <div style="font-weight: 600; margin-bottom: 4px;">添加失败</div>
-                        <div style="color: #666; font-size: 13px;">未收到响应，请检查扩展是否正常运行</div>
-                    `);
-        }
-      });
+          // 移除加载通知
+          loadingToast.remove();
+
+          if (response && response.error) {
+            showNotification('error', `
+                            <div style="font-weight: 600; margin-bottom: 4px;">添加失败</div>
+                            <div style="color: #666; font-size: 13px;">${escapeHtml(response.error)}</div>
+                        `);
+          } else if (response && response.translation) {
+            showNotification('success', `
+                            <div style="font-weight: 600; margin-bottom: 4px;">已添加到 Anki</div>
+                            <div style="margin-bottom: 6px;">
+                                <span style="color: #666;">原文：</span>
+                                <span>${escapeHtml(selection)}</span>
+                            </div>
+                            <div>
+                                <span style="color: #666;">翻译：</span>
+                                <span style="color: #22c55e;">${escapeHtml(response.translation)}</span>
+                            </div>
+                        `);
+          } else {
+            showNotification('error', `
+                            <div style="font-weight: 600; margin-bottom: 4px;">添加失败</div>
+                            <div style="color: #666; font-size: 13px;">未收到响应，请检查扩展是否正常运行</div>
+                        `);
+          }
+        });
+      } catch (error) {
+        loadingToast.remove();
+        showNotification('error', `
+          <div style="font-weight: 600; margin-bottom: 4px;">扩展已重新加载</div>
+          <div style="color: #666; font-size: 13px;">请刷新页面后重试</div>
+        `);
+      }
     }
   }
 });
