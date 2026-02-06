@@ -148,9 +148,6 @@ function renderTemplate(template, data) {
 /**
  * 创建预览模态框
  */
-/**
- * 创建预览模态框
- */
 function createPreviewModal(data) {
   // 移除已存在的模态框
   const existing = document.getElementById('ankitrans-preview-host');
@@ -179,46 +176,55 @@ function createPreviewModal(data) {
   let backHtml = renderTemplate(data.backTemplate, data.fields);
 
   // 处理音频预览 (WYSIWYG)
-  // 1. 将 [sound:...] 标签替换为不可见（以免在预览中显示丑陋的文本）
-  // 2. 如果有 audioUrl，注入一个音频播放器
+  // 将 [sound:...] 标签替换为播放按钮
+  const processPhoneticForPreview = (html, audioUS, audioUK) => {
+    let processed = html;
 
-  const cleanSoundTag = (html) => html.replace(/\[sound:[^\]]+\]/g, '');
+    // 1. 移除现有的所有 [sound:...] 标签（避免显示 ugly text）
+    processed = processed.replace(/\[sound:[^\]]+\]/g, '');
 
-  // 在预览中隐藏 sound tag 文本
-  frontHtml = cleanSoundTag(frontHtml);
-  backHtml = cleanSoundTag(backHtml);
+    // 2. 注入播放按钮
+    // 假设格式为 <span class="ph-us">🇺🇸 /.../</span>
+    // 我们在 span 内部末尾或外部添加按钮
+
+    if (audioUS && processed.includes('class="ph-us"')) {
+      processed = processed.replace(
+        /<span class="ph-us">([^<]+)<\/span>/,
+        `<span class="ph-us">$1 <span class="audio-btn" data-url="${audioUS}" title="Click to play US Audio">🔊</span></span>`
+      );
+    }
+
+    if (audioUK && processed.includes('class="ph-uk"')) {
+      processed = processed.replace(
+        /<span class="ph-uk">([^<]+)<\/span>/,
+        `<span class="ph-uk">$1 <span class="audio-btn" data-url="${audioUK}" title="Click to play UK Audio">🔊</span></span>`
+      );
+    }
+
+    return processed;
+  };
+
+  frontHtml = processPhoneticForPreview(frontHtml, data.audioUS, data.audioUK);
+  backHtml = processPhoneticForPreview(backHtml, data.audioUS, data.audioUK);
 
   // 注入音频播放器 CSS
   const audioCss = `
-    .preview-audio-player {
-        margin: 10px 0;
-        width: 100%;
-        height: 32px;
+    .audio-btn {
+        cursor: pointer;
+        display: inline-block;
+        margin-left: 4px;
+        transition: transform 0.1s, opacity 0.2s;
+        font-size: 1.1em;
+        vertical-align: middle;
+    }
+    .audio-btn:hover {
+        opacity: 0.8;
+        transform: scale(1.1);
+    }
+    .audio-btn:active {
+        transform: scale(0.95);
     }
   `;
-
-  // 如果有音频 URL，在卡片内容中插入播放器
-  // 我们将其插入到 Phonetic 后面，或者 header 后面
-  if (data.audioUrl) {
-    const audioPlayerHtml = `
-        <div class="audio-container" style="text-align: center; margin-top: 8px;">
-            <audio controls src="${data.audioUrl}" class="preview-audio-player"></audio>
-        </div>
-      `;
-    // 尝试插入到 phonetic 之后
-    if (frontHtml.includes('class="phonetic"')) {
-      frontHtml = frontHtml.replace('</div>', `</div>${audioPlayerHtml}`); // 这里可能太粗糙，替换了第一个 closing div
-    } else {
-      frontHtml += audioPlayerHtml;
-    }
-
-    // 背面同理
-    if (backHtml.includes('class="phonetic"')) {
-      backHtml = backHtml.replace('</div>', `</div>${audioPlayerHtml}`);
-    } else {
-      backHtml += audioPlayerHtml;
-    }
-  }
 
   shadow.innerHTML = `
         <style>
@@ -303,7 +309,7 @@ function createPreviewModal(data) {
                 transition: background 0.3s, border-color 0.3s;
             }
             
-            .card-preview .card {
+            .card-preview.card {
                 padding: 0; margin: 0; box-shadow: none; background: transparent;
             }
 
@@ -333,28 +339,28 @@ function createPreviewModal(data) {
             .btn-primary:hover { filter: brightness(1.1); }
         </style>
 
-        <div class="theme-wrapper anki-variables ${themeClass}" id="themeWrapper">
-            <div class="modal-container">
-                <div class="modal-header">
-                    <span class="modal-title">Push to Anki Preview</span>
-                    <button class="close-btn">&times;</button>
-                </div>
-                
-                <div class="modal-content">
-                    <div class="preview-label">Front</div>
-                    <div class="card-preview">${frontHtml}</div>
-
-                    <div class="preview-label">Back</div>
-                    <div class="card-preview">${backHtml}</div>
-                </div>
-
-                <div class="modal-footer">
-                    <button class="btn btn-secondary cancel-btn">Cancel</button>
-                    <button class="btn btn-primary confirm-btn">Add to Anki</button>
-                </div>
-            </div>
+    <div class="theme-wrapper anki-variables ${themeClass}" id="themeWrapper">
+      <div class="modal-container">
+        <div class="modal-header">
+          <span class="modal-title">Push to Anki Preview</span>
+          <button class="close-btn">&times;</button>
         </div>
-    `;
+
+        <div class="modal-content">
+          <div class="preview-label">Front</div>
+          <div class="card-preview">${frontHtml}</div>
+
+          <div class="preview-label">Back</div>
+          <div class="card-preview">${backHtml}</div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary cancel-btn">Cancel</button>
+          <button class="btn btn-primary confirm-btn">Add to Anki</button>
+        </div>
+      </div>
+    </div>
+  `;
 
   // --- 逻辑处理 ---
   // 绑定事件
@@ -362,13 +368,24 @@ function createPreviewModal(data) {
   shadow.querySelector('.close-btn').onclick = close;
   shadow.querySelector('.cancel-btn').onclick = close;
 
+  // 绑定音频播放事件
+  shadow.querySelectorAll('.audio-btn').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      const url = btn.getAttribute('data-url');
+      if (url) {
+        new Audio(url).play().catch(console.warn);
+      }
+    };
+  });
+
   shadow.querySelector('.confirm-btn').onclick = async () => {
     close();
 
     const loadingToast = showNotification('loading', `
-            <div style="font-weight: 600; margin-bottom: 4px;">正在添加...</div>
-            <div style="color: #666; font-size: 13px;">${escapeHtml(data.fields.Word)}</div>
-        `);
+      <div style="font-weight: 600; margin-bottom: 4px;">正在添加...</div>
+      <div style="color: #666; font-size: 13px;">${escapeHtml(data.fields.Word)}</div>
+    `);
 
     try {
       chrome.runtime.sendMessage({
@@ -384,12 +401,12 @@ function createPreviewModal(data) {
 
         if (response && response.success) {
           showNotification('success', `
-                        <div style="font-weight: 600; margin-bottom: 4px;">已添加到 Anki</div>
-                        <div style="margin-bottom: 6px;">
-                          <span style="color: #666;">单词：</span>
-                          <span>${escapeHtml(data.fields.Word)}</span>
-                        </div>
-                    `);
+            <div style="font-weight: 600; margin-bottom: 4px;">已添加到 Anki</div>
+            <div style="margin-bottom: 6px;">
+              <span style="color: #666;">单词：</span>
+              <span>${escapeHtml(data.fields.Word)}</span>
+            </div>
+          `);
         } else {
           showNotification('error', `添加失败: ${response.error || '未知错误'}`);
         }
@@ -426,6 +443,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       break;
 
     case 'SHOW_PREVIEW':
+      // 这里的 data 包含了 audioUS, audioUK, fields 等
       createPreviewModal(message.data);
       break;
 
@@ -466,18 +484,33 @@ document.addEventListener('keydown', async (e) => {
     if (selection) {
       e.preventDefault();
 
+      console.log('AnkiTrans: Triggering manual add. Context check:', {
+        hasChrome: !!window.chrome,
+        hasRuntime: !!window.chrome?.runtime,
+        id: window.chrome?.runtime?.id
+      });
+
       if (!chrome.runtime?.id) {
-        console.warn('AnkiTrans: Extension context invalidated.');
+        console.warn('AnkiTrans: Extension context invalidated (id is missing).');
+        // prompt user to reload
+        alert('AnkiTrans: Extension updated. Please refresh the page.');
         return;
       }
 
-      // 这里直接发送 ADD_NOTE，由 background 处理成预览流程
-      chrome.runtime.sendMessage({
-        type: 'ADD_NOTE',
-        text: selection,
-      });
+      try {
+        await chrome.runtime.sendMessage({
+          type: 'ADD_NOTE',
+          text: selection
+        });
+      } catch (err) {
+        // If extension context is truly invalid, this might throw
+        if (err.message.includes('Extension context invalidated')) {
+          console.warn('AnkiTrans: Extension context invalidated. Please refresh the page.');
+          alert('AnkiTrans: Please refresh the page to reconnect the extension.');
+        } else {
+          console.warn('AnkiTrans trigger failed:', err);
+        }
+      }
     }
   }
 });
-
-console.log('AnkiTrans content script loaded');

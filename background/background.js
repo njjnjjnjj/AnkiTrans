@@ -76,57 +76,73 @@ async function processSelection(text, tabId) {
         // 生成卡片字段
         const cardFields = buildCardFields(text, wordInfo);
 
-        // 处理音频
+        // 处理音频 (支持双音频)
+        const audioData = { us: null, uk: null };
         try {
-            const audioUrl = wordInfo.audioUS || wordInfo.audioUK;
-            if (audioUrl) {
-                // 下载音频
-                const audioResp = await fetch(audioUrl);
-                if (audioResp.ok) {
+            // Helper function to process single audio
+            const processAudio = async (url, type, word) => {
+                if (!url) return null;
+                try {
+                    const audioResp = await fetch(url);
+                    if (!audioResp.ok) return null;
                     const arrayBuffer = await audioResp.arrayBuffer();
-                    // 转 Base64
                     const base64Data = arrayBufferToBase64(arrayBuffer);
-
-                    // 生成文件名
                     const timestamp = Date.now();
-                    // 清理文件名中的非法字符
-                    const cleanWord = text.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 20);
-                    const filename = `ankitrans_${cleanWord}_${timestamp}.mp3`;
-
-                    // 上传到 Anki
+                    // distinguish filename by type
+                    const cleanWord = word.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 20);
+                    const filename = `ankitrans_${cleanWord}_${type}_${timestamp}.mp3`;
                     const storedFile = await storeMediaFile(filename, base64Data);
-                    console.log('Audio upload result:', storedFile);
-
-                    // 只有成功上传才添加标签
-                    // AnkiConnect 的 storeMediaFile 成功时返回文件名，失败可能返回 null 或 error
-                    if (storedFile || storedFile === null) { // null 也是成功的一种表现形式依具体版本而定，通常无错误抛出即成功
-                        // 将 [sound:...] 添加到 Phonetic 字段
-                        // 如果 Phonetic 字段已有内容，追加在后面
-                        const soundTag = `[sound:${filename}]`;
-                        if (cardFields.Phonetic) {
-                            cardFields.Phonetic += ` ${soundTag}`;
-                        } else {
-                            // 如果没有音标，显示在单词后面？或者还是放在 Phonetic 字段
-                            cardFields.Phonetic = soundTag;
-                        }
-                    }
-                } else {
-                    console.warn('Audio download failed:', audioResp.status);
+                    return (storedFile || storedFile === null) ? filename : null;
+                } catch (e) {
+                    console.warn(`Failed to process ${type} audio:`, e);
+                    return null;
                 }
-            } else {
-                console.log('No audio URL found');
+            };
+
+            // Parallel download
+            const [usFile, ukFile] = await Promise.all([
+                processAudio(wordInfo.audioUS, 'us', text),
+                processAudio(wordInfo.audioUK, 'uk', text)
+            ]);
+
+            // Construct new Phonetic field with embedded sound tags
+            // Expected format from dictionary.js: 
+            // <span class="ph-us">🇺🇸 /.../</span> <span class="ph-uk">🇬🇧 /.../</span>
+            // We want to inject [sound:...] inside or next to these spans.
+
+            let phoneticHtml = cardFields.Phonetic || '';
+
+            if (usFile) {
+                // Insert after US phonetic text
+                if (phoneticHtml.includes('class="ph-us"')) {
+                    phoneticHtml = phoneticHtml.replace(/<span class="ph-us">([^<]+)<\/span>/, `<span class="ph-us">$1 [sound:${usFile}]</span>`);
+                } else {
+                    phoneticHtml += ` <span class="ph-us">[sound:${usFile}]</span>`;
+                }
             }
+
+            if (ukFile) {
+                // Insert after UK phonetic text
+                if (phoneticHtml.includes('class="ph-uk"')) {
+                    phoneticHtml = phoneticHtml.replace(/<span class="ph-uk">([^<]+)<\/span>/, `<span class="ph-uk">$1 [sound:${ukFile}]</span>`);
+                } else {
+                    phoneticHtml += ` <span class="ph-uk">[sound:${ukFile}]</span>`;
+                }
+            }
+
+            cardFields.Phonetic = phoneticHtml;
+
         } catch (audioErr) {
             console.warn('Audio processing failed:', audioErr);
-            // 音频失败不应该阻止卡片生成，继续执行
         }
 
-        // 发送预览请求
+        // 发送预览请求 (传递原始 URL 用于预览播放)
         await sendToContentScript(tabId, {
             type: 'SHOW_PREVIEW',
             data: {
                 fields: cardFields,
-                audioUrl: wordInfo.audioUS || wordInfo.audioUK, // 传递原始 URL 用于预览
+                audioUS: wordInfo.audioUS,
+                audioUK: wordInfo.audioUK,
                 css: ANKITRANS_CSS,
                 frontTemplate: ANKITRANS_FRONT_TEMPLATE,
                 backTemplate: ANKITRANS_BACK_TEMPLATE
