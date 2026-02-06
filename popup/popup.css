@@ -138,6 +138,118 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Main View */
+.section {
+  margin-bottom: 24px;
+}
+
+.label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.deck-control-group {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+}
+
+.select {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--input-bg);
+  color: var(--text-color);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.3s;
+  /* Fix for select styles */
+}
+
+.select:focus {
+  border-color: #667eea;
+}
+
+.icon-btn-secondary {
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    border-radius: 8px;
+    width: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+.icon-btn-secondary:hover {
+    background: #e0e7ff;
+    color: #667eea;
+    border-color: #667eea;
+}
+
+/* New Deck Form */
+.new-deck-form {
+    margin-top: 10px;
+    background: var(--bg-block);
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    animation: slideDown 0.2s ease-out;
+}
+
+.hidden { display: none !important; }
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.input-text-sm {
+    width: 100%;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-card);
+    color: var(--text-color);
+    font-size: 13px;
+    box-sizing: border-box;
+    outline: none;
+}
+.input-text-sm:focus { border-color: #667eea; }
+
+.form-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.btn-mini {
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+.btn-primary-mini {
+    background: #667eea;
+    color: white;
+}
+.btn-primary-mini:hover { background: #5a67d8; }
+
+.btn-secondary-mini {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+.btn-secondary-mini:hover { background: rgba(0,0,0,0.05); }
+
 .label {
   display: block;
   font-size: 12px;

@@ -130,6 +130,48 @@ startBtn.addEventListener('click', async () => {
     checkAndLoad();
 });
 
+// 新建牌组逻辑
+const addDeckBtn = document.getElementById('add-deck-btn');
+const newDeckForm = document.getElementById('new-deck-form');
+const newDeckInput = document.getElementById('new-deck-input');
+const confirmDeckBtn = document.getElementById('confirm-deck-btn');
+const cancelDeckBtn = document.getElementById('cancel-deck-btn');
+
+addDeckBtn.addEventListener('click', () => {
+    newDeckForm.classList.remove('hidden');
+    newDeckInput.focus();
+});
+
+cancelDeckBtn.addEventListener('click', () => {
+    newDeckForm.classList.add('hidden');
+});
+
+confirmDeckBtn.addEventListener('click', async () => {
+    const deckName = newDeckInput.value.trim();
+    if (!deckName) {
+        alert('请输入牌组名称');
+        return;
+    }
+
+    try {
+        await sendMessage({ type: 'CREATE_DECK', deckName });
+
+        // 保存新牌组为选中项
+        await chrome.storage.sync.set({ deckName });
+
+        // 重新加载列表（会自动选中刚才保存的 deckName）
+        await loadDecks();
+
+        // 重置并隐藏表单
+        newDeckForm.classList.add('hidden');
+        newDeckInput.value = 'AnkiTrans Cards'; // Reset to default
+
+    } catch (error) {
+        console.error('Create deck failed:', error);
+        alert('创建牌组失败: ' + error.message);
+    }
+});
+
 // 事件监听
 deckSelect.addEventListener('change', saveSettings);
 

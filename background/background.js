@@ -278,6 +278,11 @@ async function handleMessage(message, sender) {
                 audioUK: wordInfo.audioUK
             };
 
+        case 'CREATE_DECK':
+            if (!message.deckName) throw new Error('Deck name required');
+            const deckId = await createDeck(message.deckName);
+            return { success: true, deckId };
+
         default:
             throw new Error(`Unknown message type: ${message.type}`);
     }

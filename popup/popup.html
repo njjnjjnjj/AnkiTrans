@@ -26,9 +26,23 @@
     <main id="main-view" class="main hidden">
       <section class="section">
         <label class="label" for="deck-select">目标牌组</label>
-        <select id="deck-select" class="select">
-          <option value="">加载中...</option>
-        </select>
+        
+        <div class="deck-control-group">
+            <select id="deck-select" class="select">
+              <option value="">加载中...</option>
+            </select>
+            <button id="add-deck-btn" class="icon-btn-secondary" title="新建牌组 (Create New Deck)">➕</button>
+        </div>
+
+        <!-- Inline Create Deck Form -->
+        <div id="new-deck-form" class="new-deck-form hidden">
+            <input type="text" id="new-deck-input" placeholder="输入牌组名称" value="AnkiTrans Cards" class="input-text-sm">
+            <div class="form-actions">
+                <button id="confirm-deck-btn" class="btn-mini btn-primary-mini">确认</button>
+                <button id="cancel-deck-btn" class="btn-mini btn-secondary-mini">取消</button>
+            </div>
+        </div>
+
         <p class="section-tip">请先在此处选择一个牌组以启用功能。</p>
       </section>
     </main>
