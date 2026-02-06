@@ -258,50 +258,100 @@ input:checked + .slider:before {
   font-family: monospace;
 }
 
-/* Mock Card Styles */
-.mock-card {
-  max-width: 400px;
-  margin: 0 auto;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-  border-radius: 8px;
+/* Modal Preview Styles (Matched with content.js) */
+.modal-container {
+  background: var(--bg-card, #fff);
+  color: var(--text-main, #333);
+  width: 100%;
+  max-width: 600px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 5px 10px -5px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
-  font-family: 'Segoe UI', sans-serif;
   border: 1px solid var(--border-color);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-.card-face {
-  padding: 20px;
-}
-
-.card-face.front {
-  background: var(--input-bg);
+.modal-header {
+  padding: 16px 24px;
   border-bottom: 1px solid var(--border-color);
-}
-
-.card-face.back {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   background: var(--bg-block);
 }
 
-.word-text {
-  font-size: 24px;
-  font-weight: bold;
+.modal-title {
+  font-weight: 600;
   color: var(--text-color);
-  margin-bottom: 8px;
+  font-size: 16px;
 }
 
-.phonetics {
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
   color: var(--text-secondary);
-  font-size: 14px;
+  padding: 0;
+  line-height: 1;
 }
 
-.example-box {
-  font-size: 13px;
-  color: var(--text-secondary);
-  background: var(--input-bg);
-  padding: 10px;
-  border-radius: 6px;
-  border: 1px solid var(--border-color);
+.modal-content {
+  padding: 24px;
+  flex: 1;
 }
+
+.preview-label-internal {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin: 16px 0 8px;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+.preview-label-internal:first-child { margin-top: 0; }
+
+.card-preview {
+  border: 1px dashed var(--border-color);
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  background: var(--bg-color); /* Inner card background */
+}
+
+/* Audio Button in Preview */
+.audio-btn {
+    cursor: pointer;
+    display: inline-block;
+    margin-left: 4px;
+    transition: transform 0.1s, opacity 0.2s;
+    font-size: 1.1em;
+    vertical-align: middle;
+}
+.audio-btn:hover {
+    opacity: 0.8;
+    transform: scale(1.1);
+}
+
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  background: var(--bg-card);
+}
+
+.refresh-btn-container {
+    padding: 12px 24px;
+    display: flex;
+    justify-content: center;
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-block);
+}
+
 
 /* Field Table styles */
 .field-table-container {

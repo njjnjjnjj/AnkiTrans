@@ -150,36 +150,9 @@
                 </table>
             </div>
 
-            <div class="preview-container" style="border: 2px dashed var(--border-color); border-radius: 8px; padding: 20px; background: var(--bg-block);">
-                <div class="preview-label" style="text-align: center; margin-bottom: 15px; font-size: 12px; color: var(--text-secondary); text-transform: uppercase;">示例卡片预览</div>
-                
-                <!-- Mock Card -->
-                <div class="mock-card">
-                    <!-- Front -->
-                    <div class="card-face front">
-                        <div class="word-text" id="mock-word">hello</div>
-                        <div class="phonetics" id="mock-phonetic">
-                            <span style="margin-right: 10px;">🇺🇸 [həˈloʊ]</span>
-                            <span>🇬🇧 [həˈləʊ]</span>
-                        </div>
-                    </div>
-                    <!-- Back (Simplified) -->
-                    <div class="card-face back">
-                        <div style="margin-bottom: 12px;" id="mock-translation">
-                            <span style="color: #667eea; font-weight: bold; margin-right: 8px;">int.</span>
-                            <span>你好；喂；您好</span>
-                        </div>
-                        <div class="example-box" id="mock-example">
-                            <div style="margin-bottom: 4px;">Hello, who's speaking, please?</div>
-                            <div style="opacity: 0.8;">喂，请问是哪位？</div>
-                        </div>
-                        <div style="text-align: right; margin-top: 8px;">
-                            <button id="refresh-mock-btn" class="icon-btn" style="display: inline-flex; width: auto; font-size: 12px; padding: 4px 8px; border-radius: 4px; background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-secondary);" title="刷新示例数据">
-                                🔄 刷新数据
-                            </button>
-                        </div>
-                    </div>
-                </div>
+            <div class="preview-container" id="preview-container-host" style="border: none; padding: 20px; background: transparent; display: flex; justify-content: center;">
+                <!-- Content will be injected by options.js -->
+                <div id="mock-loading" style="color: var(--text-secondary);">⏳ Loading preview...</div>
             </div>
             
             <p style="margin-top: 15px; font-size: 12px; color: var(--text-secondary); text-align: center;">
@@ -205,6 +178,6 @@
       <p>Made with ❤️ by AnkiTrans Team</p>
     </footer>
   </div>
-  <script src="options.js"></script>
+  <script type="module" src="options.js"></script>
 </body>
 </html>
