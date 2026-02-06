@@ -168,11 +168,14 @@ function createPreviewModal(data) {
         align-items: center;
     `;
 
-  const shadow = host.attachShadow({ mode: 'open' });
+  // 检测暗色模式 (优先读取存储的设置，否则跟随系统)
+  const systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  let isDarkMode = systemDark;
 
-  // 检测暗色模式
-  const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const themeClass = isDarkMode ? 'night_mode' : '';
+  // 尝试从 storage 读取上次的偏好 (异步读取，这里先用系统默认，随后更新)
+  // 注意：由于 modal 是同步创建 DOM，我们先渲染，稍后如果有缓存再更新类名
+
+  const shadow = host.attachShadow({ mode: 'open' });
 
   // 渲染模板
   const frontHtml = renderTemplate(data.frontTemplate, data.fields);
@@ -182,7 +185,7 @@ function createPreviewModal(data) {
         <style>
             ${data.css}
             
-            /* 强制重置 host 内部变量作用域，确保从 Anki CSS 继承正确的变量 */
+            /* 强制重置 host 内部变量作用域 */
             :host {
                 all: initial;
                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -190,7 +193,6 @@ function createPreviewModal(data) {
 
             /* 模态框容器样式 */
             .modal-container {
-                /* 使用 Anki 变量，但提供默认值以防变量未生效 */
                 background: var(--bg-card, #fff);
                 color: var(--text-main, #333);
                 width: 90%;
@@ -201,6 +203,7 @@ function createPreviewModal(data) {
                 display: flex;
                 flex-direction: column;
                 overflow: hidden;
+                transition: background 0.3s, color 0.3s;
             }
 
             .modal-header {
@@ -209,7 +212,8 @@ function createPreviewModal(data) {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                background: var(--bg-block, #f7fafc); /* 使用正确的 bg-block 变量 */
+                background: var(--bg-block, #f7fafc);
+                transition: background 0.3s;
             }
 
             .modal-title {
@@ -217,40 +221,40 @@ function createPreviewModal(data) {
                 color: var(--text-main, #1a1a2e);
             }
 
-            .close-btn {
+            .header-controls {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+
+            .icon-btn {
                 background: none;
                 border: none;
-                font-size: 24px;
+                font-size: 20px;
                 cursor: pointer;
                 color: var(--text-muted, #718096);
-                padding: 0;
+                padding: 4px;
+                border-radius: 4px;
                 line-height: 1;
+                transition: color 0.2s, background 0.2s;
             }
-            .close-btn:hover { color: var(--text-main, #000); }
+            .icon-btn:hover { 
+                color: var(--text-main, #000); 
+                background: rgba(0,0,0,0.05);
+            }
 
             .modal-content {
                 padding: 24px;
                 overflow-y: auto;
                 flex: 1;
-                /* 优化滚动条样式 */
                 scrollbar-width: thin;
                 scrollbar-color: var(--border, #e2e8f0) transparent;
             }
 
-            /* Webkit 滚动条样式 */
-            .modal-content::-webkit-scrollbar {
-                width: 6px;
-            }
-            .modal-content::-webkit-scrollbar-track {
-                background: transparent;
-            }
-            .modal-content::-webkit-scrollbar-thumb {
-                background-color: var(--border, #e2e8f0);
-                border-radius: 3px;
-            }
-            .modal-content::-webkit-scrollbar-thumb:hover {
-                background-color: var(--text-muted, #718096);
-            }
+            .modal-content::-webkit-scrollbar { width: 6px; }
+            .modal-content::-webkit-scrollbar-track { background: transparent; }
+            .modal-content::-webkit-scrollbar-thumb { background-color: var(--border, #e2e8f0); border-radius: 3px; }
+            .modal-content::-webkit-scrollbar-thumb:hover { background-color: var(--text-muted, #718096); }
 
             .preview-label {
                 font-size: 12px;
@@ -266,15 +270,12 @@ function createPreviewModal(data) {
                 padding: 16px;
                 border-radius: 8px;
                 margin-bottom: 16px;
-                background: var(--bg-card, #fff); /* 确保背景一致 */
+                background: var(--bg-card, #fff);
+                transition: background 0.3s, border-color 0.3s;
             }
             
-            /* 修正卡片模板中的 .card 样式 */
             .card-preview .card {
-                padding: 0;
-                margin: 0;
-                box-shadow: none;
-                background: transparent; /* 透明背景，由父容器控制 */
+                padding: 0; margin: 0; box-shadow: none; background: transparent;
             }
 
             .modal-footer {
@@ -284,15 +285,12 @@ function createPreviewModal(data) {
                 justify-content: flex-end;
                 gap: 12px;
                 background: var(--bg-card, #fff);
+                transition: background 0.3s;
             }
 
             .btn {
-                padding: 8px 16px;
-                border-radius: 6px;
-                font-weight: 500;
-                cursor: pointer;
-                transition: all 0.2s;
-                border: 1px solid transparent;
+                padding: 8px 16px; border-radius: 6px; font-weight: 500;
+                cursor: pointer; transition: all 0.2s; border: 1px solid transparent;
             }
 
             .btn-secondary {
@@ -302,18 +300,20 @@ function createPreviewModal(data) {
             }
             .btn-secondary:hover { background: var(--border, #e2e8f0); }
 
-            .btn-primary {
-                background: var(--accent, #4a90d9);
-                color: white;
-            }
+            .btn-primary { background: var(--accent, #4a90d9); color: white; }
             .btn-primary:hover { filter: brightness(1.1); }
         </style>
 
-        <div class="theme-wrapper ${themeClass}">
+        <div class="theme-wrapper" id="themeWrapper">
             <div class="modal-container">
                 <div class="modal-header">
                     <span class="modal-title">Push to Anki Preview</span>
-                    <button class="close-btn">&times;</button>
+                    <div class="header-controls">
+                        <button class="icon-btn theme-btn" title="Toggle Theme">
+                            <span id="themeIcon">🌓</span>
+                        </button>
+                        <button class="icon-btn close-btn" title="Close">&times;</button>
+                    </div>
                 </div>
                 
                 <div class="modal-content">
@@ -332,7 +332,39 @@ function createPreviewModal(data) {
         </div>
     `;
 
-  // 绑定事件
+  // --- 逻辑处理 ---
+  const themeWrapper = shadow.getElementById('themeWrapper');
+  const themeIcon = shadow.getElementById('themeIcon');
+  const themeBtn = shadow.querySelector('.theme-btn');
+
+  // 更新主题 UI
+  const updateThemeUI = (dark) => {
+    if (dark) {
+      themeWrapper.classList.add('night_mode');
+      themeIcon.textContent = '🌙';
+    } else {
+      themeWrapper.classList.remove('night_mode');
+      themeIcon.textContent = '☀️';
+    }
+  };
+
+  // 初始化主题（优先读取 Storage）
+  chrome.storage.sync.get(['ankitrans_theme_pref'], (result) => {
+    if (result.ankitrans_theme_pref !== undefined) {
+      isDarkMode = result.ankitrans_theme_pref === 'dark';
+    }
+    updateThemeUI(isDarkMode);
+  });
+
+  // 主题切换事件
+  themeBtn.onclick = () => {
+    isDarkMode = !isDarkMode;
+    updateThemeUI(isDarkMode);
+    // 保存偏好
+    chrome.storage.sync.set({ 'ankitrans_theme_pref': isDarkMode ? 'dark' : 'light' });
+  };
+
+  // 绑定关闭事件
   const close = () => host.remove();
   shadow.querySelector('.close-btn').onclick = close;
   shadow.querySelector('.cancel-btn').onclick = close;
@@ -340,13 +372,11 @@ function createPreviewModal(data) {
   shadow.querySelector('.confirm-btn').onclick = async () => {
     close();
 
-    // 显示加载状态
     const loadingToast = showNotification('loading', `
             <div style="font-weight: 600; margin-bottom: 4px;">正在添加...</div>
             <div style="color: #666; font-size: 13px;">${escapeHtml(data.fields.Word)}</div>
         `);
 
-    // 发送确认消息
     try {
       chrome.runtime.sendMessage({
         type: 'CONFIRM_ADD_NOTE',
