@@ -111,7 +111,24 @@ async function sendToContentScript(tabId, message) {
     try {
         await chrome.tabs.sendMessage(tabId, message);
     } catch (error) {
-        console.error('Failed to send message to content script:', error);
+        console.warn('Failed to send message to content script, falling back to notification:', error);
+
+        // 如果无法连接到 content script (例如在特殊页面)，使用系统通知
+        if (message.type === 'ERROR') {
+            chrome.notifications.create({
+                type: 'basic',
+                iconUrl: 'icons/icon128.png',
+                title: 'AnkiTrans 错误',
+                message: message.message
+            });
+        } else if (message.type === 'SUCCESS') {
+            chrome.notifications.create({
+                type: 'basic',
+                iconUrl: 'icons/icon128.png',
+                title: '已添加到 Anki',
+                message: `${message.text}\n翻译: ${message.translation}`
+            });
+        }
     }
 }
 
