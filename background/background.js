@@ -67,6 +67,12 @@ async function processSelection(text, tabId) {
             throw new Error('无法连接到 Anki，请确保 Anki 已运行且安装了 AnkiConnect 插件');
         }
 
+        // 检查是否已指定牌组
+        const settings = await getSettings();
+        if (!settings.deckName) {
+            throw new Error('未指定牌组！请点击插件图标，在设置中选择一个目标牌组。');
+        }
+
         // 查询必应词典
         const wordInfo = await lookupWord(text);
 
