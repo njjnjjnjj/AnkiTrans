@@ -95,7 +95,7 @@ async function updateMockCard() {
                 text-align: center; 
             }
         </style>
-        <div class="loading">⏳ 正在从必应词典获取最新数据... (hello)</div>
+        <div class="loading">⏳ 正在从必应词典 (© Microsoft) 获取最新数据... (hello)</div>
     `;
 
     try {
@@ -231,7 +231,8 @@ async function updateMockCard() {
     } catch (e) {
         console.error('Mock preview error', e);
         if (shadow) {
-            shadow.innerHTML = `<div style="padding: 20px; color: red;">Error: ${e.message}</div>`;
+            shadow.innerHTML = `<div style="color: var(--text-secondary); padding: 20px;">⏳ 正在从必应词典 (© Microsoft) 获取最新数据... (hello)</div>`;
         }
     }
 }
+```
