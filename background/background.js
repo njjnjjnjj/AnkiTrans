@@ -19,6 +19,7 @@ import { lookupWord, buildCardFields } from '../lib/dictionary.js';
 // 默认设置
 const DEFAULT_SETTINGS = {
     deckName: '', // 默认为空，强制用户选择
+    enablePreview: true
 };
 
 /**
@@ -143,18 +144,40 @@ async function processSelection(text, tabId) {
             console.warn('Audio processing failed:', audioErr);
         }
 
-        // 发送预览请求 (传递原始 URL 用于预览播放)
-        await sendToContentScript(tabId, {
-            type: 'SHOW_PREVIEW',
-            data: {
+        // 发送预览请求 或 直接添加
+        if (settings.enablePreview !== false) { // Default to true if undefined
+            // 发送预览请求 (传递原始 URL 用于预览播放)
+            await sendToContentScript(tabId, {
+                type: 'SHOW_PREVIEW',
+                data: {
+                    fields: cardFields,
+                    audioUS: wordInfo.audioUS,
+                    audioUK: wordInfo.audioUK,
+                    css: ANKITRANS_CSS,
+                    frontTemplate: ANKITRANS_FRONT_TEMPLATE,
+                    backTemplate: ANKITRANS_BACK_TEMPLATE
+                }
+            });
+        } else {
+            // 直接添加模式
+            // 确保 AnkiTrans 模型存在 (虽然 addNoteWithFields 会检查, 但 createAnkiTransModel 可能没被引入/导出到 background Context ?) 
+            // addNoteWithFields 已经在 anki-connect.js 中处理了 ensureAnkiTransModel
+
+            // 重要：即使是直接添加，也需要确保 deck 存在 (createDeck)
+            await createDeck(settings.deckName);
+
+            const noteId = await addNoteWithFields({
+                deckName: settings.deckName,
                 fields: cardFields,
-                audioUS: wordInfo.audioUS,
-                audioUK: wordInfo.audioUK,
-                css: ANKITRANS_CSS,
-                frontTemplate: ANKITRANS_FRONT_TEMPLATE,
-                backTemplate: ANKITRANS_BACK_TEMPLATE
-            }
-        });
+                tags: ['bing-dict'],
+            });
+
+            // 通知成功
+            await sendToContentScript(tabId, {
+                type: 'SUCCESS',
+                text: `${cardFields.Word}` // 简单提示单词已添加
+            });
+        }
 
     } catch (error) {
         console.error('AnkiTrans error:', error);

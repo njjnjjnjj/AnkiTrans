@@ -1,3 +1,16 @@
+// options.js
+document.addEventListener('DOMContentLoaded', async () => {
+    const previewToggle = document.getElementById('enable-preview');
 
-// options.js - 目前主要用于后续扩展动态设置，暂留空或用于简单的交互
-console.log('AnkiTrans Options Page Loaded');
+    // Load settings
+    const { enablePreview } = await chrome.storage.sync.get({ enablePreview: true });
+    previewToggle.checked = enablePreview;
+
+    // Save settings on change
+    previewToggle.addEventListener('change', async () => {
+        await chrome.storage.sync.set({ enablePreview: previewToggle.checked });
+
+        // Visual feedback (optional)
+        console.log('Setting updated: enablePreview =', previewToggle.checked);
+    });
+});
