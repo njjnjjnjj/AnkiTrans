@@ -252,7 +252,59 @@ async function handleMessage(message, sender) {
                 throw new Error('未指定牌组！请点击插件图标，在设置中选择一个目标牌组。');
             }
 
-            // await createDeck(settings.deckName);  <-- Removed per user request
+            // --- Audio Processing Logic (Duplicated from processSelection) ---
+            try {
+                const processAudio = async (url, type, wordText) => {
+                    if (!url) return null;
+                    try {
+                        const audioResp = await fetch(url);
+                        if (!audioResp.ok) return null;
+                        const arrayBuffer = await audioResp.arrayBuffer();
+                        const base64Data = arrayBufferToBase64(arrayBuffer);
+                        const timestamp = Date.now();
+                        const cleanWord = wordText.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 20);
+                        const filename = `ankitrans_${cleanWord}_${type}_${timestamp}.mp3`;
+                        const storedFile = await storeMediaFile(filename, base64Data);
+                        return (storedFile || storedFile === null) ? filename : null;
+                    } catch (e) {
+                        console.warn(`Failed to process ${type} audio:`, e);
+                        return null;
+                    }
+                };
+
+                const word = message.fields.Word || 'unknown';
+                const audioUSUrl = message.audioUS;
+                const audioUKUrl = message.audioUK;
+
+                const [usFile, ukFile] = await Promise.all([
+                    processAudio(audioUSUrl, 'us', word),
+                    processAudio(audioUKUrl, 'uk', word)
+                ]);
+
+                let phoneticHtml = message.fields.Phonetic || '';
+
+                if (usFile) {
+                    if (phoneticHtml.includes('class="ph-us"')) {
+                        phoneticHtml = phoneticHtml.replace(/<span class="ph-us">([^<]+)<\/span>/, `<span class="ph-us">$1 [sound:${usFile}]</span>`);
+                    } else if (!phoneticHtml.includes(usFile)) {
+                        phoneticHtml += ` <span class="ph-us">[sound:${usFile}]</span>`;
+                    }
+                }
+
+                if (ukFile) {
+                    if (phoneticHtml.includes('class="ph-uk"')) {
+                        phoneticHtml = phoneticHtml.replace(/<span class="ph-uk">([^<]+)<\/span>/, `<span class="ph-uk">$1 [sound:${ukFile}]</span>`);
+                    } else if (!phoneticHtml.includes(ukFile)) {
+                        phoneticHtml += ` <span class="ph-uk">[sound:${ukFile}]</span>`;
+                    }
+                }
+
+                message.fields.Phonetic = phoneticHtml;
+
+            } catch (err) {
+                console.warn('Audio processing in CONFIRM_ADD_NOTE failed:', err);
+            }
+            // ----------------------------------------------------------------
 
             const noteId = await addNoteWithFields({
                 deckName: settings.deckName,

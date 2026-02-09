@@ -390,7 +390,9 @@ function createPreviewModal(data) {
     try {
       chrome.runtime.sendMessage({
         type: 'CONFIRM_ADD_NOTE',
-        fields: data.fields
+        fields: data.fields,
+        audioUS: data.audioUS,
+        audioUK: data.audioUK
       }, response => {
         loadingToast.remove();
 
@@ -1092,7 +1094,9 @@ function renderMiniCardContent(shadow, state) {
 
           const response = await chrome.runtime.sendMessage({
             type: 'CONFIRM_ADD_NOTE',
-            fields: data.fields
+            fields: data.fields,
+            audioUS: data.wordInfo.audioUS,
+            audioUK: data.wordInfo.audioUK
           });
 
           if (response && response.success) {
