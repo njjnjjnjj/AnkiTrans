@@ -72,11 +72,101 @@ async function sendMessage(message) {
 }
 
 /**
- * 更新连接状态显示
+ * 更新连接状态显示并控制界面元素
+ * @param {boolean} connected - 是否连接
+ * @param {string} [errorMessage] - 可选的错误消息
  */
-function updateConnectionStatus(connected) {
+function updateConnectionStatus(connected, errorMessage = null) {
     connectionStatus.className = `status ${connected ? 'status-connected' : 'status-disconnected'}`;
     connectionStatus.querySelector('.status-text').textContent = connected ? '已连接' : '未连接';
+
+    // 获取需要控制的元素
+    const addDeckBtn = document.getElementById('add-deck-btn');
+    const confirmDeckBtn = document.getElementById('confirm-deck-btn');
+
+    if (connected) {
+        // 连接成功：启用所有控件
+        deckSelect.disabled = false;
+        addDeckBtn.disabled = false;
+        confirmDeckBtn.disabled = false;
+        deckSelect.classList.remove('disabled');
+        addDeckBtn.classList.remove('disabled');
+        // 移除错误提示
+        removeConnectionError();
+    } else {
+        // 连接失败：禁用所有控件
+        deckSelect.disabled = true;
+        addDeckBtn.disabled = true;
+        confirmDeckBtn.disabled = true;
+        deckSelect.classList.add('disabled');
+        addDeckBtn.classList.add('disabled');
+        deckSelect.innerHTML = '<option value="">请先连接 Anki...</option>';
+        // 显示错误提示
+        showConnectionError(errorMessage || '无法连接到 Anki，请确保 Anki 已运行且安装了 AnkiConnect 插件');
+    }
+}
+
+/**
+ * 显示连接错误提示 (持久化，不自动消失)
+ */
+function showConnectionError(message) {
+    removeConnectionError();
+
+    const errorDiv = document.createElement('div');
+    errorDiv.id = 'connection-error-message';
+    errorDiv.style.cssText = `
+        background: #fef2f2;
+        border: 1px solid #ef4444;
+        border-left: 4px solid #ef4444;
+        color: #b91c1c;
+        padding: 12px 14px;
+        margin: 12px 0 0 0;
+        border-radius: 8px;
+        font-size: 12px;
+        line-height: 1.5;
+    `;
+    errorDiv.innerHTML = `
+        <div style="font-weight: 600; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+            <span>❌</span>
+            <span>连接失败</span>
+        </div>
+        <div style="margin-bottom: 8px;">${message}</div>
+        <button id="retry-connection-btn" style="
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            font-weight: 500;
+        ">重新连接</button>
+    `;
+
+    // 插入到 section 下方
+    const section = mainView.querySelector('.section');
+    if (section) {
+        section.appendChild(errorDiv);
+    } else {
+        mainView.appendChild(errorDiv);
+    }
+
+    // 绑定重试按钮
+    document.getElementById('retry-connection-btn').addEventListener('click', () => {
+        removeConnectionError();
+        // 显示检测中状态
+        connectionStatus.className = 'status status-checking';
+        connectionStatus.querySelector('.status-text').textContent = '检测中...';
+        checkAndLoad();
+    });
+}
+
+/**
+ * 移除连接错误提示
+ */
+function removeConnectionError() {
+    const existing = document.getElementById('connection-error-message');
+    if (existing) existing.remove();
 }
 
 /**
@@ -161,7 +251,8 @@ async function checkAndLoad() {
         }
     } catch (error) {
         console.error('Connection check failed:', error);
-        updateConnectionStatus(false);
+        // 传递错误信息到 UI
+        updateConnectionStatus(false, error.message || '连接检查失败，请确保 Anki 已运行');
     }
 }
 
