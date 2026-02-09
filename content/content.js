@@ -514,3 +514,605 @@ document.addEventListener('keydown', async (e) => {
     }
   }
 });
+
+// --- 划词翻译系统 (Selection Lookup) ---
+
+let currentSelectionRange = null;
+let currentFloatingIcon = null;
+let currentMiniCard = null;
+let ignoreNextMouseUp = false;
+
+document.addEventListener('mouseup', handleSelection);
+document.addEventListener('keyup', handleSelection);
+document.addEventListener('mousedown', (e) => {
+  // 点击任意地方关闭卡片/图标（除非点击的是卡片/图标本身）
+  if (currentMiniCard && !currentMiniCard.contains(e.target)) {
+    removeMiniCard();
+  }
+  if (currentFloatingIcon && !currentFloatingIcon.contains(e.target)) {
+    removeFloatingIcon();
+  }
+});
+
+function handleSelection(e) {
+  if (ignoreNextMouseUp) {
+    ignoreNextMouseUp = false;
+    return;
+  }
+
+  // 给一点延时让 selection 完成
+  setTimeout(() => {
+    const selection = window.getSelection();
+    const text = selection.toString().trim();
+
+    // Debug log
+    if (text) console.log('AnkiTrans: Selection detected:', text);
+
+    if (text.length > 0 && text.length < 50 && /^[a-zA-Z\s\u00C0-\u00FF'-]+$/.test(text)) {
+      // 只有纯英文/西文才显示，避免中文选中也弹出
+
+      // 如果已经有卡片显示，且选区没变（或者是在卡片内操作），则不处理
+      if (currentMiniCard) return;
+
+      // 忽略输入框内的选区
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      const range = selection.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+
+      // 如果已经有图标显示，检查位置是否变化，没变就不动
+      if (currentFloatingIcon) {
+        if (currentFloatingIcon.dataset.text !== text) {
+          removeFloatingIcon();
+          showFloatingIcon(rect, text);
+        }
+      } else {
+        showFloatingIcon(rect, text);
+      }
+    } else {
+      // 如果点击了除了图标以外的地方导致选区消失/变化，移除图标
+      if (!currentMiniCard) {
+        removeFloatingIcon();
+      }
+    }
+  }, 10);
+}
+
+function removeFloatingIcon() {
+  if (currentFloatingIcon) {
+    currentFloatingIcon.remove();
+    currentFloatingIcon = null;
+  }
+}
+
+function removeMiniCard() {
+  if (currentMiniCard) {
+    currentMiniCard.remove();
+    currentMiniCard = null;
+  }
+}
+
+function showFloatingIcon(rect, text) {
+  removeFloatingIcon();
+
+  const iconHost = document.createElement('div');
+  iconHost.dataset.text = text;
+  iconHost.style.cssText = `
+        position: absolute;
+        top: ${rect.top + window.scrollY - 40}px;
+        left: ${rect.left + window.scrollX}px;
+        z-index: 2147483647;
+        cursor: pointer;
+        position: absolute;
+        top: ${rect.top + window.scrollY - 40}px;
+        left: ${rect.left + window.scrollX}px;
+        z-index: 2147483647;
+        cursor: pointer;
+        /* opacity: 0;  <-- Remove helper opacity on host, handle in shadow */
+        background: transparent;
+    `;
+
+  // 位置修正
+  if (rect.top - 40 < 0) {
+    iconHost.style.top = `${rect.bottom + window.scrollY + 10}px`;
+  }
+
+  console.log('AnkiTrans: Showing icon at', iconHost.style.top, iconHost.style.left, 'for text:', text);
+
+  const shadow = iconHost.attachShadow({ mode: 'open' });
+  shadow.innerHTML = `
+        <style>
+            @keyframes ankitrans-fade-in {
+                from { opacity: 0; transform: translateY(5px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .icon-btn {
+                width: 32px;
+                height: 32px;
+                background: white;
+                border-radius: 50%;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s, border-color 0.2s;
+                border: 1px solid #e2e8f0;
+                animation: ankitrans-fade-in 0.2s forwards; /* Animation on the internal element */
+            }
+            .icon-btn:hover {
+                transform: scale(1.1);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            }
+            .logo {
+                font-size: 14px;
+                color: #0ea5e9;
+                font-weight: 800;
+                font-family: sans-serif;
+                letter-spacing: -0.5px;
+            }
+
+            /* Dark Mode */
+            @media (prefers-color-scheme: dark) {
+                .icon-btn {
+                    background: #1e293b;
+                    border-color: #334155;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+                }
+                .icon-btn:hover {
+                    background: #334155;
+                }
+                .logo {
+                    color: #38bdf8;
+                }
+            }
+        </style>
+        <div class="icon-btn" title="AnkiTrans 查词">
+            <span class="logo">AT</span>
+        </div>
+    `;
+
+  shadow.querySelector('.icon-btn').addEventListener('mousedown', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    showMiniCard(rect, text);
+    removeFloatingIcon();
+  });
+
+  document.body.appendChild(iconHost);
+  currentFloatingIcon = iconHost;
+}
+
+async function showMiniCard(rect, text) {
+  removeMiniCard();
+
+  const cardHost = document.createElement('div');
+  cardHost.style.cssText = `
+        position: fixed;
+        top: ${rect.bottom + 10}px;
+        left: ${rect.left}px;
+        z-index: 999999;
+        font-family: sans-serif;
+    `;
+
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+
+  if (rect.left + 320 > viewportWidth) {
+    cardHost.style.left = `${viewportWidth - 330}px`;
+  }
+
+  if (rect.bottom + 300 > viewportHeight) {
+    cardHost.style.top = `${rect.top - 310}px`;
+  }
+
+  const shadow = cardHost.attachShadow({ mode: 'open' });
+
+  renderMiniCardContent(shadow, { loading: true, word: text });
+  document.body.appendChild(cardHost);
+  currentMiniCard = cardHost;
+
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: 'LOOKUP_ONLY',
+      word: text
+    });
+
+    if (chrome.runtime.lastError) {
+      renderMiniCardContent(shadow, {
+        loading: false,
+        error: chrome.runtime.lastError.message,
+        word: text
+      });
+      return;
+    }
+
+    if (response && response.found) {
+      renderMiniCardContent(shadow, {
+        loading: false,
+        data: response.data,
+        word: text
+      });
+    } else {
+      renderMiniCardContent(shadow, {
+        loading: false,
+        error: '未找到释义',
+        word: text
+      });
+    }
+  } catch (err) {
+    renderMiniCardContent(shadow, {
+      loading: false,
+      error: err.message,
+      word: text
+    });
+  }
+}
+
+function renderMiniCardContent(shadow, state) {
+  const { loading, data, error, word } = state;
+  const hasDefinitions = data && data.wordInfo && data.wordInfo.definitions && data.wordInfo.definitions.length > 0;
+
+  const styles = `
+        <style>
+            @keyframes ankitrans-fade-in {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .card {
+                width: 320px;
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+                border: 1px solid #e2e8f0;
+                overflow: hidden;
+                font-size: 14px;
+                color: #334155;
+                animation: ankitrans-fade-in 0.2s ease-out;
+            }
+            .header {
+                padding: 8px 12px;
+                background: #f8fafc;
+                border-bottom: 1px solid #e2e8f0;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                min-height: 40px;
+            }
+            .word-title {
+                font-weight: 700;
+                font-size: 16px;
+                color: #0f172a;
+            }
+            .close-btn {
+                cursor: pointer;
+                color: #94a3b8;
+                font-size: 18px;
+                line-height: 1;
+                padding: 4px;
+                border-radius: 4px;
+            }
+            .close-btn:hover { color: #64748b; background: #e2e8f0; }
+            
+            .content {
+                padding: 12px 16px;
+                max-height: 300px;
+                overflow-y: auto;
+            }
+            .content::-webkit-scrollbar { width: 6px; }
+            .content::-webkit-scrollbar-thumb { background-color: #e2e8f0; border-radius: 3px; }
+
+            .phonetic {
+                color: #64748b;
+                font-size: 12px;
+                margin-bottom: 10px;
+                font-family: Consolas, Monaco, monospace;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 12px;
+                align-items: center;
+            }
+            .ph-item {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+            }
+            .audio-btn {
+                cursor: pointer;
+                color: #0ea5e9;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                transition: background 0.2s;
+            }
+            .audio-btn:hover {
+                background: #e0f2fe;
+            }
+            .def-row {
+                margin-bottom: 12px;
+                line-height: 1.6;
+                font-size: 14px;
+                display: flex; /* Use flex for layout */
+                align-items: baseline;
+            }
+            .def-row:last-child { margin-bottom: 0; }
+            
+            .pos {
+                color: #0ea5e9;
+                font-weight: 700;
+                margin-right: 8px;
+                font-size: 12px;
+                background: #e0f2fe;
+                padding: 1px 5px;
+                border-radius: 4px;
+                display: inline-block;
+                flex-shrink: 0; /* Prevent pos tag from shrinking */
+                min-width: 24px;
+                text-align: center;
+            }
+            
+            .footer {
+                padding: 8px 12px;
+                border-top: 1px solid #e2e8f0;
+                background: #fff;
+                display: flex;
+                justify-content: flex-end;
+            }
+            .btn {
+                padding: 6px 14px;
+                border-radius: 6px;
+                font-size: 12px;
+                font-weight: 600;
+                cursor: pointer;
+                border: none;
+                transition: all 0.2s;
+            }
+            .btn-primary {
+                background: #0ea5e9;
+                color: white;
+            }
+            .btn-primary:hover {
+                background: #0284c7;
+                box-shadow: 0 2px 4px rgba(14, 165, 233, 0.3);
+            }
+            .btn-disabled {
+                background: #cbd5e1;
+                cursor: not-allowed;
+                color: #64748b;
+            }
+            .loading {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #94a3b8;
+                padding: 30px;
+                font-size: 14px;
+            }
+            .error, .empty-state {
+                color: #64748b;
+                text-align: center;
+                padding: 20px 10px;
+                background: #f8fafc;
+                border-radius: 8px;
+                font-size: 13px;
+            }
+            .error {
+                color: #ef4444;
+                background: #fef2f2;
+            }
+
+            .inflection {
+                color: #b45309;
+                font-size: 12px;
+                margin-bottom: 8px;
+                background: #fffbeb;
+                padding: 4px 8px;
+                border-radius: 4px;
+                display: inline-block;
+                border: 1px solid #fcd34d;
+            }
+
+            /* Dark Mode Support */
+            @media (prefers-color-scheme: dark) {
+                .card {
+                    background: #1e293b;
+                    border-color: #334155;
+                    color: #e2e8f0;
+                }
+                .header {
+                    background: #0f172a;
+                    border-color: #334155;
+                }
+                .word-title {
+                    color: #f1f5f9;
+                }
+                .content::-webkit-scrollbar-thumb {
+                    background-color: #475569;
+                }
+                .footer {
+                    background: #1e293b;
+                    border-color: #334155;
+                }
+                .phonetic {
+                    color: #94a3b8;
+                }
+                .audio-btn {
+                    color: #38bdf8;
+                }
+                .audio-btn:hover {
+                    background: #0f172a;
+                }
+                .pos {
+                    background: #075985;
+                    color: #e0f2fe;
+                }
+                .inflection {
+                    background: #451a03;
+                    color: #fdba74;
+                    border-color: #78350f; 
+                }
+                .close-btn:hover {
+                    color: #e2e8f0;
+                    background: #334155;
+                }
+                .error, .empty-state {
+                    background: #334155;
+                    color: #cbd5e1;
+                }
+                .error {
+                    background: #450a0a;
+                    color: #fca5a5;
+                }
+                .btn-disabled {
+                    background: #475569;
+                    color: #94a3b8;
+                }
+            }
+        </style>
+    `;
+
+  let bodyHtml = '';
+
+  if (loading) {
+    bodyHtml = '<div class="loading">正在查询 Bing 词典...</div>';
+  } else if (error) {
+    bodyHtml = `<div class="error">${error}</div>`;
+  } else if (data) {
+    if (hasDefinitions) {
+      const wordInfo = data.wordInfo;
+      const phonetics = [];
+
+      const speakerIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>`;
+
+      if (wordInfo.phoneticUS) {
+        const audioHtml = wordInfo.audioUS ? `<span class="audio-btn" data-url="${wordInfo.audioUS}">${speakerIcon}</span>` : '';
+        phonetics.push(`<span class="ph-item">🇺🇸 /${wordInfo.phoneticUS}/ ${audioHtml}</span>`);
+      }
+      if (wordInfo.phoneticUK) {
+        const audioHtml = wordInfo.audioUK ? `<span class="audio-btn" data-url="${wordInfo.audioUK}">${speakerIcon}</span>` : '';
+        phonetics.push(`<span class="ph-item">🇬🇧 /${wordInfo.phoneticUK}/ ${audioHtml}</span>`);
+      }
+
+      const definitions = wordInfo.definitions.slice(0, 3).map(d =>
+        `<div class="mean-line"><span class="pos">${d.pos}</span>${d.meanings.join('；')}</div>`
+      ).join('');
+
+      const inflectionHtml = wordInfo.inflection ? `<div class="inflection">ℹ️ ${wordInfo.inflection}</div>` : '';
+
+      bodyHtml = `
+            ${inflectionHtml}
+            <div class="phonetic">${phonetics.join('')}</div>
+            <div class="definitions">${definitions}</div>
+        `;
+    } else {
+      // Empty state
+      bodyHtml = `
+            <div class="empty-state">
+                <p>未找到释义</p>
+                <p style="margin-top:8px; font-size:12px; opacity:0.8;">请检查拼写或尝试其他词汇。</p>
+            </div>
+        `;
+    }
+  }
+
+  const cardHtml = `
+        <div class="card">
+            <div class="header">
+                <span class="word-title">${word}</span>
+                <span class="close-btn">&times;</span>
+            </div>
+            <div class="content">
+                ${bodyHtml}
+            </div>
+            ${!loading && !error && hasDefinitions ? `
+            <div class="footer">
+                <button class="btn btn-primary add-btn">添加到 Anki</button>
+            </div>
+            ` : ''}
+        </div>
+    `;
+
+  shadow.innerHTML = styles + cardHtml;
+
+  // Bind events
+  const closeBtn = shadow.querySelector('.close-btn');
+  if (closeBtn) closeBtn.addEventListener('click', removeMiniCard);
+
+  // Audio events
+  shadow.querySelectorAll('.audio-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const url = btn.getAttribute('data-url');
+      if (url) {
+        new Audio(url).play().catch(err => {
+          console.warn('Audio play failed', err);
+        });
+      }
+    });
+  });
+
+  const addBtn = shadow.querySelector('.add-btn');
+  if (addBtn) {
+    addBtn.addEventListener('click', async () => {
+      // Don't disable immediately if we might show preview
+      // addBtn.textContent = '添加中...'; 
+      // addBtn.className = 'btn btn-disabled';
+      // addBtn.disabled = true;
+
+      try {
+        // Check preview setting
+        const settings = await chrome.storage.sync.get({ enablePreview: true });
+
+        if (settings.enablePreview) {
+          // Show Preview Modal
+          // We need to construct the data object expected by createPreviewModal
+          // It expects: { fields, audioUS, audioUK, css, frontTemplate, backTemplate }
+          // These are now available in `data` (if background.js is updated)
+
+          // Close mini card first
+          removeMiniCard();
+
+          createPreviewModal({
+            fields: data.fields,
+            audioUS: data.wordInfo.audioUS,
+            audioUK: data.wordInfo.audioUK,
+            css: data.css,
+            frontTemplate: data.frontTemplate,
+            backTemplate: data.backTemplate
+          });
+
+        } else {
+          // Direct Add (Original Logic)
+          addBtn.textContent = '添加中...';
+          addBtn.className = 'btn btn-disabled';
+          addBtn.disabled = true;
+
+          const response = await chrome.runtime.sendMessage({
+            type: 'CONFIRM_ADD_NOTE',
+            fields: data.fields
+          });
+
+          if (response && response.success) {
+            addBtn.textContent = '已添加';
+            showNotification('success', `已添加: ${word}`);
+            setTimeout(removeMiniCard, 1500);
+          } else {
+            addBtn.textContent = '重试';
+            addBtn.className = 'btn btn-primary add-btn';
+            addBtn.disabled = false;
+            showNotification('error', response.error || '添加失败');
+          }
+        }
+
+      } catch (err) {
+        addBtn.textContent = '重试';
+        addBtn.className = 'btn btn-primary add-btn';
+        addBtn.disabled = false;
+        showNotification('error', err.message);
+      }
+    });
+  }
+}

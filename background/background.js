@@ -283,6 +283,24 @@ async function handleMessage(message, sender) {
             const deckId = await createDeck(message.deckName);
             return { success: true, deckId };
 
+        case 'LOOKUP_ONLY':
+            const lookupResult = await lookupWord(message.word);
+            if (!lookupResult) {
+                return { found: false };
+            }
+            const lookupFields = buildCardFields(message.word, lookupResult);
+            return {
+                found: true,
+                data: {
+                    wordInfo: lookupResult,
+                    fields: lookupFields,
+                    // Return templates for preview modal
+                    css: ANKITRANS_CSS,
+                    frontTemplate: ANKITRANS_FRONT_TEMPLATE,
+                    backTemplate: ANKITRANS_BACK_TEMPLATE
+                }
+            };
+
         default:
             throw new Error(`Unknown message type: ${message.type}`);
     }
