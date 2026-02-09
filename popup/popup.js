@@ -7,6 +7,48 @@
 const connectionStatus = document.getElementById('connection-status');
 const deckSelect = document.getElementById('deck-select');
 
+/**
+ * 在 UI 界面上显示错误信息 (替代 alert)
+ */
+function showError(message, duration = 5000) {
+    // 移除已有的错误提示
+    const existing = document.getElementById('popup-error-message');
+    if (existing) existing.remove();
+
+    const errorDiv = document.createElement('div');
+    errorDiv.id = 'popup-error-message';
+    errorDiv.style.cssText = `
+        background: #fef2f2;
+        border: 1px solid #ef4444;
+        border-left: 4px solid #ef4444;
+        color: #b91c1c;
+        padding: 10px 12px;
+        margin: 12px 0;
+        border-radius: 6px;
+        font-size: 13px;
+        line-height: 1.4;
+    `;
+    errorDiv.textContent = message;
+
+    // 插入到牌组选择区域下方
+    const deckSection = document.querySelector('.deck-section');
+    if (deckSection) {
+        deckSection.appendChild(errorDiv);
+    } else {
+        // Fallback: 插入到 main-view 末尾
+        mainView.appendChild(errorDiv);
+    }
+
+    // 自动消失
+    if (duration > 0) {
+        setTimeout(() => {
+            errorDiv.style.transition = 'opacity 0.3s';
+            errorDiv.style.opacity = '0';
+            setTimeout(() => errorDiv.remove(), 300);
+        }, duration);
+    }
+}
+
 // DOM Elements (New)
 const mainView = document.getElementById('main-view');
 const onboardingView = document.getElementById('onboarding-view');
@@ -149,7 +191,7 @@ cancelDeckBtn.addEventListener('click', () => {
 confirmDeckBtn.addEventListener('click', async () => {
     const deckName = newDeckInput.value.trim();
     if (!deckName) {
-        alert('请输入牌组名称');
+        showError('请输入牌组名称');
         return;
     }
 
@@ -168,7 +210,7 @@ confirmDeckBtn.addEventListener('click', async () => {
 
     } catch (error) {
         console.error('Create deck failed:', error);
-        alert('创建牌组失败: ' + error.message);
+        showError('创建牌组失败: ' + error.message);
     }
 });
 

@@ -494,8 +494,11 @@ document.addEventListener('keydown', async (e) => {
 
       if (!chrome.runtime?.id) {
         console.warn('AnkiTrans: Extension context invalidated (id is missing).');
-        // prompt user to reload
-        alert('AnkiTrans: Extension updated. Please refresh the page.');
+        // 使用 UI 通知替代 alert
+        showNotification('error', `
+          <div style="font-weight: 600; margin-bottom: 4px;">扩展已更新</div>
+          <div style="color: #666; font-size: 13px;">请刷新页面以重新连接扩展</div>
+        `);
         return;
       }
 
@@ -508,7 +511,10 @@ document.addEventListener('keydown', async (e) => {
         // If extension context is truly invalid, this might throw
         if (err.message.includes('Extension context invalidated')) {
           console.warn('AnkiTrans: Extension context invalidated. Please refresh the page.');
-          alert('AnkiTrans: Please refresh the page to reconnect the extension.');
+          showNotification('error', `
+            <div style="font-weight: 600; margin-bottom: 4px;">扩展连接断开</div>
+            <div style="color: #666; font-size: 13px;">请刷新页面以重新连接扩展</div>
+          `);
         } else {
           console.warn('AnkiTrans trigger failed:', err);
         }
