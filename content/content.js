@@ -861,7 +861,8 @@ function renderMiniCardContent(shadow, state) {
                 border-top: 1px solid #e2e8f0;
                 background: #fff;
                 display: flex;
-                justify-content: flex-end;
+                justify-content: space-between;
+                align-items: center;
             }
             .btn {
                 padding: 6px 14px;
@@ -900,6 +901,14 @@ function renderMiniCardContent(shadow, state) {
                 background: #f8fafc;
                 border-radius: 8px;
                 font-size: 13px;
+            }
+            .brand-text {
+                font-size: 10px;
+                color: #94a3b8;
+                opacity: 0.6;
+                text-align: left;
+                letter-spacing: 0.5px;
+                font-weight: 500;
             }
             .error {
                 color: #ef4444;
@@ -1031,6 +1040,7 @@ function renderMiniCardContent(shadow, state) {
             </div>
             ${!loading && !error && hasDefinitions ? `
             <div class="footer">
+                <div class="brand-text">AnkiTrans</div>
                 <button class="btn btn-primary add-btn">添加到 Anki</button>
             </div>
             ` : ''}
