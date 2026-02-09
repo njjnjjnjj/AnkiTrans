@@ -130,6 +130,39 @@ h3 {
   gap: 8px;
 }
 
+/* Method list styles */
+.method-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.method-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-block);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+.method-tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: #fff;
+  background: #cbd5e1;
+  font-weight: bold;
+}
+
+.method-tag.recom {
+  background: #10b981; /* Green for recommended */
+}
+
 /* Features Grid */
 .features-grid {
   display: grid;
