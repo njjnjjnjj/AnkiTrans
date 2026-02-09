@@ -739,12 +739,14 @@ async function showMiniCard(rect, text) {
       renderMiniCardContent(shadow, {
         loading: false,
         data: response.data,
+        connected: response.connected,
         word: text
       });
     } else {
       renderMiniCardContent(shadow, {
         loading: false,
         error: '未找到释义',
+        connected: response ? response.connected : false,
         word: text
       });
     }
@@ -758,7 +760,7 @@ async function showMiniCard(rect, text) {
 }
 
 function renderMiniCardContent(shadow, state) {
-  const { loading, data, error, word } = state;
+  const { loading, data, error, word, connected } = state;
   const hasDefinitions = data && data.wordInfo && data.wordInfo.definitions && data.wordInfo.definitions.length > 0;
 
   const styles = `
@@ -813,11 +815,11 @@ function renderMiniCardContent(shadow, state) {
             .phonetic {
                 color: #64748b;
                 font-size: 12px;
-                margin-bottom: 10px;
+                margin-bottom: 4px; /* 减小音标间距 */
                 font-family: Consolas, Monaco, monospace;
                 display: flex;
                 flex-wrap: wrap;
-                gap: 12px;
+                gap: 8px;
                 align-items: center;
             }
             .ph-item {
@@ -839,11 +841,22 @@ function renderMiniCardContent(shadow, state) {
             .audio-btn:hover {
                 background: #e0f2fe;
             }
+            
+            /* 新增 mean-line 样式以修复粘连 */
+            .mean-line {
+                margin-bottom: 6px;
+                line-height: 1.5;
+                display: flex;
+                align-items: baseline;
+            }
+            .mean-line:last-child { margin-bottom: 0; }
+
             .def-row {
-                margin-bottom: 12px;
+                /* 保留旧样式定义以防万一，但主要使用 mean-line */
+                margin-bottom: 8px;
                 line-height: 1.6;
                 font-size: 14px;
-                display: flex; /* Use flex for layout */
+                display: flex; 
                 align-items: baseline;
             }
             .def-row:last-child { margin-bottom: 0; }
@@ -1047,7 +1060,10 @@ function renderMiniCardContent(shadow, state) {
             ${!loading && !error && hasDefinitions ? `
             <div class="footer">
                 <div class="brand-text">AnkiTrans</div>
-                <button class="btn btn-primary add-btn">添加到 Anki</button>
+                ${connected !== false ?
+        `<button class="btn btn-primary add-btn">添加到 Anki</button>` :
+        `<button class="btn btn-disabled" disabled title="请检查 Anki 是否运行">Anki 未连接</button>`
+      }
             </div>
             ` : ''}
         </div>

@@ -336,13 +336,19 @@ async function handleMessage(message, sender) {
             return { success: true, deckId };
 
         case 'LOOKUP_ONLY':
-            const lookupResult = await lookupWord(message.word);
+            // 并行执行查词和连接检查
+            const [lookupResult, isConnected] = await Promise.all([
+                lookupWord(message.word).catch(e => null),
+                checkConnection().catch(e => false)
+            ]);
+
             if (!lookupResult) {
-                return { found: false };
+                return { found: false, connected: isConnected };
             }
             const lookupFields = buildCardFields(message.word, lookupResult);
             return {
                 found: true,
+                connected: isConnected,
                 data: {
                     wordInfo: lookupResult,
                     fields: lookupFields,
