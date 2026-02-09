@@ -6,27 +6,111 @@ body {
   background: var(--bg-block); /* 使用稍微深一点/浅一点的背景区分 */
 }
 
-.options-container {
-  max-width: 800px;
-  margin: 0 auto;
+/* Layout Wrapper */
+.app-layout {
+  display: flex;
   min-height: 100vh;
-  background: var(--bg-color);
-  box-shadow: 0 0 20px rgba(0,0,0,0.05);
+  background: var(--bg-block);
+}
+
+/* Sidebar Styles */
+.sidebar {
+  width: 260px;
+  background: var(--bg-card);
+  border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  flex-shrink: 0;
+  z-index: 10;
 }
 
-.options-header {
-  padding: 20px 40px;
-  height: auto;
+.sidebar-header {
+  padding: 24px;
+  border-bottom: 1px solid var(--border-color);
 }
 
-.options-header .logo h1 {
-  font-size: 20px;
+.sidebar-header .logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sidebar-header .logo h1 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-color);
+  margin: 0;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 20px 0;
+  overflow-y: auto;
+}
+
+.sidebar-nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar-nav li {
+  margin-bottom: 2px;
+}
+
+.nav-link {
+  display: block;
+  padding: 12px 24px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-left: 3px solid transparent;
+}
+
+.nav-link:hover {
+  background: var(--bg-block);
+  color: var(--text-color);
+}
+
+.nav-link.active {
+  background: rgba(102, 126, 234, 0.08);
+  color: #667eea;
+  border-left-color: #667eea;
+}
+
+.sidebar-footer-info {
+  padding: 24px;
+  border-top: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+/* Main Content Area */
+.main-content {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+}
+
+.content-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px;
 }
 
 .options-main {
-  padding: 40px;
+  padding: 0;
+}
+
+/* Smooth Scroll */
+html {
+  scroll-behavior: smooth;
 }
 
 .intro-card {
