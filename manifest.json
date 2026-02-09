@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AnkiTrans",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "将选中的单词或短语通过 AnkiConnect 推送到 Anki 牌组",
   "permissions": [
     "activeTab",
