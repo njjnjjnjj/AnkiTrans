@@ -480,8 +480,43 @@ function escapeHtml(text) {
 }
 
 // 可选：添加快捷键支持（Ctrl+Shift+A）
+// 快捷键支持 (Dynamic)
+let currentShortcut = { modifiers: ['Ctrl', 'Shift'], key: 'A' };
+
+// Load initial shortcut
+if (window.chrome && chrome.storage && chrome.storage.sync) {
+  chrome.storage.sync.get(['shortcut'], (result) => {
+    if (result.shortcut) {
+      currentShortcut = result.shortcut;
+    }
+  });
+
+  // Listen for changes
+  chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace === 'sync' && changes.shortcut) {
+      currentShortcut = changes.shortcut.newValue;
+      console.log('AnkiTrans: Shortcut updated to', currentShortcut);
+    }
+  });
+}
+
 document.addEventListener('keydown', async (e) => {
-  if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+  // Check against currentShortcut
+  const isMatch = (() => {
+    if (e.key.toUpperCase() !== currentShortcut.key.toUpperCase()) return false;
+
+    const neededCtrl = currentShortcut.modifiers.includes('Ctrl');
+    const neededAlt = currentShortcut.modifiers.includes('Alt');
+    const neededShift = currentShortcut.modifiers.includes('Shift');
+    const neededMeta = currentShortcut.modifiers.includes('Command');
+
+    return e.ctrlKey === neededCtrl &&
+      e.altKey === neededAlt &&
+      e.shiftKey === neededShift &&
+      e.metaKey === neededMeta;
+  })();
+
+  if (isMatch) {
     const selection = window.getSelection().toString().trim();
     if (selection) {
       e.preventDefault();
