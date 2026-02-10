@@ -20,6 +20,67 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Initial load
     updateMockCard();
+
+    // Sidebar Navigation Logic
+    const navLinks = document.querySelectorAll('.sidebar-nav .nav-link');
+    const sections = Array.from(navLinks).map(link => {
+        const id = link.getAttribute('href').substring(1);
+        return document.getElementById(id);
+    }).filter(el => el);
+
+    let isManualScroll = false;
+    let manualScrollTimeout;
+
+    // Click handler to update UI immediately and preventing observer interference
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            // Remove active class from all
+            navLinks.forEach(nav => nav.classList.remove('active'));
+            // Add to clicked
+            link.classList.add('active');
+
+            // Set flag to disable observer temporarily
+            isManualScroll = true;
+            clearTimeout(manualScrollTimeout);
+            manualScrollTimeout = setTimeout(() => {
+                isManualScroll = false;
+            }, 1000); // 1s buffer for smooth scroll to complete
+        });
+    });
+
+    // Scroll Spy using IntersectionObserver
+    const observer = new IntersectionObserver((entries) => {
+        if (isManualScroll) return;
+
+        // Find the most visible section
+        let maxRatio = 0;
+        let activeId = '';
+
+        // We need to look at all entries to decide the winner, 
+        // but IntersectionObserver only gives us changed entries.
+        // So this logic below is a bit simplified: it highlights the last one that triggered 'isIntersecting'
+        // which works well for top-down scrolling.
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                activeId = entry.target.id;
+            }
+        });
+
+        if (activeId) {
+            navLinks.forEach(link => {
+                link.classList.toggle('active', link.getAttribute('href') === `#${activeId}`);
+            });
+        }
+    }, {
+        root: null,
+        // Adjust rootMargin to highlight section when it's in the top half of the screen
+        rootMargin: '-20% 0px -60% 0px',
+        threshold: 0
+    });
+
+    sections.forEach(section => {
+        if (section) observer.observe(section);
+    });
 });
 
 /**

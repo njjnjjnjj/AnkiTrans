@@ -8,21 +8,39 @@
   <link rel="stylesheet" href="options.css">
 </head>
 <body>
-  <div class="options-container">
-    <header class="header options-header">
-      <div class="logo">
-        <span class="logo-icon">📚</span>
-        <h1>AnkiTrans 使用指南</h1>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <span class="logo-icon">📚</span>
+          <h1>AnkiTrans</h1>
+        </div>
       </div>
-    </header>
+      <nav class="sidebar-nav">
+        <ul>
+          <li><a href="#intro" class="nav-link active">👋 欢迎使用 AnkiTrans</a></li>
+          <li><a href="#quick-start" class="nav-link">🚀 快速开始</a></li>
+          <li><a href="#settings" class="nav-link">⚙️ 功能设置</a></li>
+          <li><a href="#features" class="nav-link">✨ 核心功能</a></li>
+          <li><a href="#templates" class="nav-link">🎨 卡片模板说明</a></li>
+          <li><a href="#faq" class="nav-link">❓ 常见问题</a></li>
+        </ul>
+      </nav>
+      <div class="sidebar-footer-info">
+        <small>AnkiTrans v1.1.1</small>
+      </div>
+    </aside>
+    <main class="main-content">
+      <div class="content-container">
 
-    <main class="main options-main">
-      <div class="intro-card">
+
+    <div class="options-main">
+      <div class="intro-card" id="intro">
         <h2>👋 欢迎使用 AnkiTrans</h2>
         <p>AnkiTrans 是一款极简的划词制卡工具，致力于帮助您在浏览网页时，以最快速度将生词捕捉并同步到 Anki 中。</p>
       </div>
 
-      <section class="section">
+      <section class="section" id="quick-start">
         <h3>🚀 快速开始</h3>
         <ul class="steps-list">
           <li>
@@ -64,7 +82,7 @@
         </ul>
       </section>
 
-      <section class="section" id="settings-section">
+      <section class="section" id="settings">
         <h3>⚙️ 功能设置</h3>
         <div class="settings-card" style="background: var(--input-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color);">
             <div class="setting-item" style="display: flex; justify-content: space-between; align-items: center;">
@@ -80,7 +98,7 @@
         </div>
       </section>
 
-      <section class="section">
+      <section class="section" id="features">
         <h3>✨ 核心功能</h3>
         <div class="features-grid">
           <div class="feature-card">
@@ -116,7 +134,7 @@
         </div>
       </section>
 
-      <section class="section">
+      <section class="section" id="templates">
         <h3>🎨 卡片模板说明</h3>
         <div class="template-card" style="background: var(--input-bg); padding: 25px; border-radius: 12px; border: 1px solid var(--border-color);">
             <p style="margin-bottom: 20px; color: var(--text-secondary); line-height: 1.6;">
@@ -181,7 +199,7 @@
         </div>
       </section>
 
-      <section class="section">
+      <section class="section" id="faq">
         <h3>❓ 常见问题</h3>
         <div class="faq-item">
           <h4>Q: 为什么提示 "Extension context invalidated"?</h4>
@@ -192,7 +210,7 @@
           <p>A: 请检查网络连接，确保能够访问 cn.bing.com。</p>
         </div>
       </section>
-    </main>
+    </div>
 
     <footer class="footer options-footer">
       <div class="disclaimer" style="margin-bottom: 20px; font-size: 12px; opacity: 0.8; max-width: 700px; margin-left: auto; margin-right: auto; text-align: left; line-height: 1.5; background: rgba(0,0,0,0.03); padding: 15px; border-radius: 8px;">
@@ -207,6 +225,8 @@
       </div>
       <p>Made with ❤️ by AnkiTrans Team</p>
     </footer>
+      </div>
+    </main>
   </div>
   <script type="module" src="options.js"></script>
 </body>
