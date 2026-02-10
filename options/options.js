@@ -9,8 +9,113 @@ document.addEventListener('DOMContentLoaded', async () => {
     const previewToggle = document.getElementById('enable-preview');
 
     // Load settings
-    const { enablePreview } = await chrome.storage.sync.get({ enablePreview: true });
+    const { enablePreview, shortcut } = await chrome.storage.sync.get({
+        enablePreview: true,
+        shortcut: { modifiers: ['Ctrl', 'Shift'], key: 'A', display: 'Ctrl + Shift + A' }
+    });
     previewToggle.checked = enablePreview;
+
+    // Shortcut Logic
+    const shortcutInput = document.getElementById('shortcut-input');
+    const resetBtn = document.getElementById('reset-shortcut');
+    const msgEl = document.getElementById('shortcut-status');
+    let isRecording = false;
+
+    // Display current shortcut
+    function displayShortcut(sc) {
+        shortcutInput.value = sc.display;
+    }
+    displayShortcut(shortcut);
+
+    // Start recording on click/focus
+    shortcutInput.addEventListener('click', () => {
+        isRecording = true;
+        shortcutInput.classList.add('recording');
+        shortcutInput.value = '请按下快捷键...';
+        msgEl.textContent = '按 Esc 取消';
+        msgEl.className = 'shortcut-msg';
+    });
+
+    // Blur handler to cancel if clicked outside without saving
+    shortcutInput.addEventListener('blur', () => {
+        if (isRecording) {
+            isRecording = false;
+            shortcutInput.classList.remove('recording');
+            chrome.storage.sync.get(['shortcut'], (result) => {
+                displayShortcut(result.shortcut || { modifiers: ['Ctrl', 'Shift'], key: 'A', display: 'Ctrl + Shift + A' });
+            });
+            msgEl.textContent = '';
+        }
+    });
+
+    // Handle keydown
+    shortcutInput.addEventListener('keydown', async (e) => {
+        if (!isRecording) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Cancel on Esc
+        if (e.key === 'Escape') {
+            shortcutInput.blur();
+            return;
+        }
+
+        // Build key combo
+        const modifiers = [];
+        if (e.ctrlKey) modifiers.push('Ctrl');
+        if (e.altKey) modifiers.push('Alt');
+        if (e.shiftKey) modifiers.push('Shift');
+        if (e.metaKey) modifiers.push('Command'); // Mac support
+
+        let key = e.key.toUpperCase();
+        // Skip isolated modifier presses
+        if (['CONTROL', 'ALT', 'SHIFT', 'META'].includes(key)) return;
+
+        // Validation: Must have at least one modifier
+        if (modifiers.length === 0) {
+            msgEl.textContent = '错误：必须包含 Ctrl/Alt/Shift 修饰键';
+            msgEl.className = 'shortcut-msg error';
+            return;
+        }
+
+        // Validation: Block browser conflicts
+        const forbidden = ['C', 'V', 'X', 'A', 'Z', 'T', 'W', 'N', 'R', 'F', 'P', 'S', 'O', 'D'];
+        const isCommonConflict = e.ctrlKey && forbidden.includes(key) && !e.shiftKey && !e.altKey;
+
+        if (isCommonConflict) {
+            msgEl.textContent = `保留快捷键冲突：不支持 Ctrl + ${key}`;
+            msgEl.className = 'shortcut-msg error';
+            return;
+        }
+
+        // Valid shortcut found
+        const newShortcut = {
+            modifiers: modifiers,
+            key: key,
+            display: `${modifiers.join(' + ')} + ${key}`
+        };
+
+        // Save
+        await chrome.storage.sync.set({ shortcut: newShortcut });
+        displayShortcut(newShortcut);
+
+        isRecording = false;
+        shortcutInput.classList.remove('recording');
+        msgEl.textContent = '保存成功！';
+        msgEl.className = 'shortcut-msg success';
+        shortcutInput.blur();
+
+        console.log('Shortcut updated:', newShortcut);
+    });
+
+    // Reset handler
+    resetBtn.addEventListener('click', async () => {
+        const defaultShortcut = { modifiers: ['Ctrl', 'Shift'], key: 'A', display: 'Ctrl + Shift + A' };
+        await chrome.storage.sync.set({ shortcut: defaultShortcut });
+        displayShortcut(defaultShortcut);
+        msgEl.textContent = '已恢复默认设置';
+        msgEl.className = 'shortcut-msg success';
+    });
 
     // Save settings on change
     previewToggle.addEventListener('change', async () => {

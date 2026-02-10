@@ -84,7 +84,7 @@
 
       <section class="section" id="settings">
         <h3>⚙️ 功能设置</h3>
-        <div class="settings-card" style="background: var(--input-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color);">
+        <div class="settings-card" style="background: var(--input-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 20px;">
             <div class="setting-item" style="display: flex; justify-content: space-between; align-items: center;">
                 <div class="setting-info">
                     <h4 style="margin: 0 0 4px 0; color: var(--text-color);">启用卡片预览</h4>
@@ -94,6 +94,23 @@
                     <input type="checkbox" id="enable-preview">
                     <span class="slider round"></span>
                 </label>
+            </div>
+        </div>
+
+        <div class="settings-card" style="background: var(--input-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color);">
+            <div class="setting-item">
+                <div class="setting-info" style="margin-bottom: 12px; position: relative; padding-right: 30px;">
+                    <h4 style="margin: 0 0 4px 0; color: var(--text-color);">快捷键设置</h4>
+                    <div class="info-tooltip-container" data-tooltip="系统保留快捷键不可用：&#10;Ctrl + C/V/X/A/Z (剪贴板/撤销)&#10;Ctrl + T/W/N (标签页控制)&#10;Ctrl + R/F/P/S/O/D (页面操作)">
+                        <span class="info-icon">i</span>
+                    </div>
+                    <p style="margin: 0; font-size: 13px; color: var(--text-secondary);">点击输入框并按下键盘组合键以修改（默认：Ctrl+Shift+A）。</p>
+                </div>
+                <div class="shortcut-input-container">
+                    <input type="text" id="shortcut-input" class="shortcut-record-input" placeholder="点击录制快捷键..." readonly>
+                    <button id="reset-shortcut" class="btn-reset" title="恢复默认">↺</button>
+                </div>
+                <p id="shortcut-status" class="shortcut-msg"></p>
             </div>
         </div>
       </section>
