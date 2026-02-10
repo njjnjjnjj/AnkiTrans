@@ -482,78 +482,102 @@ function escapeHtml(text) {
 // 可选：添加快捷键支持（Ctrl+Shift+A）
 // 快捷键支持 (Dynamic)
 let currentShortcut = { modifiers: ['Ctrl', 'Shift'], key: 'A' };
+let currentShortcutLookup = { modifiers: ['Alt'], key: 'Q' }; // Default for lookup
 
-// Load initial shortcut
+// Load initial shortcuts
 if (window.chrome && chrome.storage && chrome.storage.sync) {
-  chrome.storage.sync.get(['shortcut'], (result) => {
+  chrome.storage.sync.get(['shortcut', 'shortcut_lookup'], (result) => {
     if (result.shortcut) {
       currentShortcut = result.shortcut;
+    }
+    if (result.shortcut_lookup) {
+      currentShortcutLookup = result.shortcut_lookup;
     }
   });
 
   // Listen for changes
   chrome.storage.onChanged.addListener((changes, namespace) => {
-    if (namespace === 'sync' && changes.shortcut) {
-      currentShortcut = changes.shortcut.newValue;
-      console.log('AnkiTrans: Shortcut updated to', currentShortcut);
+    if (namespace === 'sync') {
+      if (changes.shortcut) {
+        currentShortcut = changes.shortcut.newValue;
+        console.log('AnkiTrans: Shortcut updated to', currentShortcut);
+      }
+      if (changes.shortcut_lookup) {
+        currentShortcutLookup = changes.shortcut_lookup.newValue;
+        console.log('AnkiTrans: Lookup Shortcut updated to', currentShortcutLookup);
+      }
     }
   });
 }
 
+function checkShortcut(e, shortcutConfig) {
+  if (e.key.toUpperCase() !== shortcutConfig.key.toUpperCase()) return false;
+
+  const neededCtrl = shortcutConfig.modifiers.includes('Ctrl');
+  const neededAlt = shortcutConfig.modifiers.includes('Alt');
+  const neededShift = shortcutConfig.modifiers.includes('Shift');
+  const neededMeta = shortcutConfig.modifiers.includes('Command');
+
+  return e.ctrlKey === neededCtrl &&
+    e.altKey === neededAlt &&
+    e.shiftKey === neededShift &&
+    e.metaKey === neededMeta;
+}
+
 document.addEventListener('keydown', async (e) => {
-  // Check against currentShortcut
-  const isMatch = (() => {
-    if (e.key.toUpperCase() !== currentShortcut.key.toUpperCase()) return false;
+  const selection = window.getSelection().toString().trim();
+  if (!selection) return;
 
-    const neededCtrl = currentShortcut.modifiers.includes('Ctrl');
-    const neededAlt = currentShortcut.modifiers.includes('Alt');
-    const neededShift = currentShortcut.modifiers.includes('Shift');
-    const neededMeta = currentShortcut.modifiers.includes('Command');
+  // Check for Direct Add Shortcut
+  if (checkShortcut(e, currentShortcut)) {
+    e.preventDefault();
+    console.log('AnkiTrans: Triggering manual add via shortcut.');
 
-    return e.ctrlKey === neededCtrl &&
-      e.altKey === neededAlt &&
-      e.shiftKey === neededShift &&
-      e.metaKey === neededMeta;
-  })();
-
-  if (isMatch) {
-    const selection = window.getSelection().toString().trim();
-    if (selection) {
-      e.preventDefault();
-
-      console.log('AnkiTrans: Triggering manual add. Context check:', {
-        hasChrome: !!window.chrome,
-        hasRuntime: !!window.chrome?.runtime,
-        id: window.chrome?.runtime?.id
-      });
-
-      if (!chrome.runtime?.id) {
-        console.warn('AnkiTrans: Extension context invalidated (id is missing).');
-        // 使用 UI 通知替代 alert
-        showNotification('error', `
+    if (!chrome.runtime?.id) {
+      console.warn('AnkiTrans: Extension context invalidated (id is missing).');
+      showNotification('error', `
           <div style="font-weight: 600; margin-bottom: 4px;">扩展已更新</div>
           <div style="color: #666; font-size: 13px;">请刷新页面以重新连接扩展</div>
         `);
-        return;
-      }
+      return;
+    }
 
-      try {
-        await chrome.runtime.sendMessage({
-          type: 'ADD_NOTE',
-          text: selection
-        });
-      } catch (err) {
-        // If extension context is truly invalid, this might throw
-        if (err.message.includes('Extension context invalidated')) {
-          console.warn('AnkiTrans: Extension context invalidated. Please refresh the page.');
-          showNotification('error', `
+    try {
+      await chrome.runtime.sendMessage({
+        type: 'ADD_NOTE',
+        text: selection
+      });
+    } catch (err) {
+      if (err.message.includes('Extension context invalidated')) {
+        console.warn('AnkiTrans: Extension context invalidated. Please refresh the page.');
+        showNotification('error', `
             <div style="font-weight: 600; margin-bottom: 4px;">扩展连接断开</div>
             <div style="color: #666; font-size: 13px;">请刷新页面以重新连接扩展</div>
           `);
-        } else {
-          console.warn('AnkiTrans trigger failed:', err);
-        }
+      } else {
+        console.warn('AnkiTrans trigger failed:', err);
       }
+    }
+    return;
+  }
+
+  // Check for Lookup Shortcut
+  if (checkShortcut(e, currentShortcutLookup)) {
+    e.preventDefault();
+    console.log('AnkiTrans: Triggering lookup via shortcut.');
+
+    // Logic to show mini card
+    // We need the rect of the selection
+    try {
+      const range = window.getSelection().getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+
+      // If mini card is already showing for this text, maybe just return? 
+      // Or we can force refresh. Let's force show.
+      showMiniCard(rect, selection);
+
+    } catch (err) {
+      console.error('AnkiTrans: Failed to get selection rect for lookup.', err);
     }
   }
 });

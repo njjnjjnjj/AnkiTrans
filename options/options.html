@@ -69,11 +69,11 @@
                       <strong>先查后存：</strong> 点击悬浮图标查看释义 -> 点击「添加到 Anki」。
                   </div>
                   <div class="method-row">
-                      <span class="method-tag">极速</span>
+                      <span class="method-tag speed">极速</span>
                       <strong>快捷键：</strong> 直接按下 <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>A</kbd>。
                   </div>
                   <div class="method-row">
-                      <span class="method-tag">传统</span>
+                      <span class="method-tag classic">传统</span>
                       <strong>右键菜单：</strong> 右键选择「AnkiTrans: 添加到 Anki」。
                   </div>
               </div>
@@ -98,19 +98,31 @@
         </div>
 
         <div class="settings-card" style="background: var(--input-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color);">
-            <div class="setting-item">
+            <div class="setting-item" style="margin-bottom: 24px;">
                 <div class="setting-info" style="margin-bottom: 12px; position: relative; padding-right: 30px;">
-                    <h4 style="margin: 0 0 4px 0; color: var(--text-color);">快捷键设置</h4>
+                    <h4 style="margin: 0 0 4px 0; color: var(--text-color);">快捷键 1：直接添加到 Anki</h4>
                     <div class="info-tooltip-container" data-tooltip="系统保留快捷键不可用：&#10;Ctrl + C/V/X/A/Z (剪贴板/撤销)&#10;Ctrl + T/W/N (标签页控制)&#10;Ctrl + R/F/P/S/O/D (页面操作)">
                         <span class="info-icon">i</span>
                     </div>
-                    <p style="margin: 0; font-size: 13px; color: var(--text-secondary);">点击输入框并按下键盘组合键以修改（默认：Ctrl+Shift+A）。</p>
+                    <p style="margin: 0; font-size: 13px; color: var(--text-secondary);">选中文字后，直接添加卡片（默认：Ctrl+Shift+A）。</p>
                 </div>
                 <div class="shortcut-input-container">
                     <input type="text" id="shortcut-input" class="shortcut-record-input" placeholder="点击录制快捷键..." readonly>
                     <button id="reset-shortcut" class="btn-reset" title="恢复默认">↺</button>
                 </div>
                 <p id="shortcut-status" class="shortcut-msg"></p>
+            </div>
+
+            <div class="setting-item" style="border-top: 1px solid var(--border-color); padding-top: 24px;">
+                <div class="setting-info" style="margin-bottom: 12px;">
+                    <h4 style="margin: 0 0 4px 0; color: var(--text-color);">快捷键 2：显示翻译卡片</h4>
+                    <p style="margin: 0; font-size: 13px; color: var(--text-secondary);">选中文字后，显示翻译卡片（默认：Alt+Q）。</p>
+                </div>
+                <div class="shortcut-input-container">
+                    <input type="text" id="shortcut-lookup-input" class="shortcut-record-input" placeholder="点击录制快捷键..." readonly>
+                    <button id="reset-shortcut-lookup" class="btn-reset" title="恢复默认">↺</button>
+                </div>
+                <p id="shortcut-lookup-status" class="shortcut-msg"></p>
             </div>
         </div>
       </section>

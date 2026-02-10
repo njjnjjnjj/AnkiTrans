@@ -247,6 +247,14 @@ h3 {
   background: #10b981; /* Green for recommended */
 }
 
+.method-tag.speed {
+  background: #3b82f6; /* Blue for speed */
+}
+
+.method-tag.classic {
+  background: #64748b; /* Slate for classic */
+}
+
 /* Features Grid */
 .features-grid {
   display: grid;
