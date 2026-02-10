@@ -735,7 +735,7 @@ function showFloatingIcon(rect, text) {
             }
         </style>
         <div class="icon-btn" title="AnkiTrans 查词">
-            <span class="logo">AT</span>
+            <img src="${chrome.runtime.getURL('icons/icon48.png')}" class="logo-img" style="width: 24px; height: 24px; pointer-events: none;">
         </div>
     `;
 
