@@ -780,10 +780,18 @@ async function showMiniCard(rect, text) {
   currentMiniCard = cardHost;
 
   try {
+    const t0 = performance.now();
+    console.log(`[AnkiTrans] 🔍 Looking up "${text}"...`);
+
     const response = await chrome.runtime.sendMessage({
       type: 'LOOKUP_ONLY',
       word: text
     });
+
+    const elapsed = (performance.now() - t0).toFixed(0);
+    const cacheInfo = response?._cache ? `✅ CACHE HIT` : `❌ CACHE MISS`;
+    const lookupTime = response?._lookupMs ? `${response._lookupMs}ms` : `${elapsed}ms`;
+    console.log(`[AnkiTrans] ⏱ Lookup "${text}": ${lookupTime} (${cacheInfo}, round-trip: ${elapsed}ms)`);
 
     if (chrome.runtime.lastError) {
       renderMiniCardContent(shadow, {

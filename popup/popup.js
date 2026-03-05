@@ -243,7 +243,8 @@ async function init() {
 
 async function checkAndLoad() {
     try {
-        const { connected } = await sendMessage({ type: 'CHECK_CONNECTION' });
+        // 触发 background 立即执行连接检查并更新全局状态
+        const { connected } = await sendMessage({ type: 'REFRESH_CONNECTION' });
         updateConnectionStatus(connected);
 
         if (connected) {
@@ -251,7 +252,6 @@ async function checkAndLoad() {
         }
     } catch (error) {
         console.error('Connection check failed:', error);
-        // 传递错误信息到 UI
         updateConnectionStatus(false, error.message || '连接检查失败，请确保 Anki 已运行');
     }
 }

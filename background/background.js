@@ -16,11 +16,57 @@ import {
 import { lookupWord, buildCardFields } from '../lib/dictionary.js';
 
 // 默认设置
-// 默认设置
 const DEFAULT_SETTINGS = {
     deckName: '', // 默认为空，强制用户选择
     enablePreview: true
 };
+
+// --- 全局 Anki 连接状态管理 ---
+const ANKI_STATUS_KEY = '_ankiConnected';
+const CONNECTION_CHECK_INTERVAL = 10000; // 10 秒
+
+/**
+ * 更新全局连接状态（写入 session storage，供 content script 和 popup 读取）
+ */
+async function updateGlobalConnectionStatus(connected) {
+    try {
+        await chrome.storage.session.set({ [ANKI_STATUS_KEY]: connected });
+    } catch (e) {
+        console.warn('[AnkiTrans] Failed to update connection status:', e);
+    }
+}
+
+/**
+ * 读取全局连接状态
+ */
+async function getGlobalConnectionStatus() {
+    try {
+        const result = await chrome.storage.session.get(ANKI_STATUS_KEY);
+        return result[ANKI_STATUS_KEY] ?? false;
+    } catch (e) {
+        return false;
+    }
+}
+
+/**
+ * 执行一次连接检查并更新全局状态
+ */
+async function refreshConnectionStatus() {
+    try {
+        const connected = await checkConnection();
+        await updateGlobalConnectionStatus(connected);
+        console.log(`[AnkiTrans] Connection status: ${connected ? '✅ connected' : '❌ disconnected'}`);
+        return connected;
+    } catch (e) {
+        await updateGlobalConnectionStatus(false);
+        return false;
+    }
+}
+
+// 启动 10 秒轮询
+setInterval(refreshConnectionStatus, CONNECTION_CHECK_INTERVAL);
+// Service Worker 启动时立即检查一次
+refreshConnectionStatus();
 
 /**
  * 获取用户设置
@@ -59,23 +105,26 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
  */
 async function processSelection(text, tabId) {
     try {
+        const t0 = performance.now();
         // 通知 content script 显示加载状态
         await sendToContentScript(tabId, { type: 'LOADING', text });
 
-        // 检查 AnkiConnect 连接
-        const connected = await checkConnection();
+        // 读取全局连接状态（不发起网络请求）
+        const connected = await getGlobalConnectionStatus();
         if (!connected) {
             throw new Error('无法连接到 Anki，请确保 Anki 已运行且安装了 AnkiConnect 插件');
         }
 
-        // 检查是否已指定牌组
-        const settings = await getSettings();
+        // 并行获取设置和查词
+        const [settings, wordInfo] = await Promise.all([
+            getSettings(),
+            lookupWord(text)
+        ]);
+        console.log(`[AnkiTrans] ⏱ processSelection done: ${(performance.now() - t0).toFixed(0)}ms`);
+
         if (!settings.deckName) {
             throw new Error('未指定牌组！请点击插件图标，在设置中选择一个目标牌组。');
         }
-
-        // 查询必应词典
-        const wordInfo = await lookupWord(text);
 
         if (!wordInfo || wordInfo.definitions.length === 0) {
             throw new Error(`未找到 "${text}" 的释义`);
@@ -225,7 +274,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 async function handleMessage(message, sender) {
     switch (message.type) {
         case 'CHECK_CONNECTION':
-            return { connected: await checkConnection() };
+            return { connected: await getGlobalConnectionStatus() };
+
+        case 'REFRESH_CONNECTION':
+            // popup 手动重连时调用
+            const freshStatus = await refreshConnectionStatus();
+            return { connected: freshStatus };
 
         case 'GET_DECKS':
             return { decks: await getDeckNames() };
@@ -336,23 +390,25 @@ async function handleMessage(message, sender) {
             return { success: true, deckId };
 
         case 'LOOKUP_ONLY':
-            // 并行执行查词和连接检查
-            const [lookupResult, isConnected] = await Promise.all([
-                lookupWord(message.word).catch(e => null),
-                checkConnection().catch(e => false)
-            ]);
+            // 纯查词 + 读取全局连接状态（无额外网络请求）
+            const tLookup = performance.now();
+            const lookupResult = await lookupWord(message.word).catch(e => null);
+            const lookupMs = Math.round(performance.now() - tLookup);
+            const ankiConnected = await getGlobalConnectionStatus();
 
             if (!lookupResult) {
-                return { found: false, connected: isConnected };
+                return { found: false, connected: ankiConnected, _lookupMs: lookupMs, _cache: false };
             }
+
             const lookupFields = buildCardFields(message.word, lookupResult);
             return {
                 found: true,
-                connected: isConnected,
+                connected: ankiConnected,
+                _lookupMs: lookupMs,
+                _cache: lookupResult._fromCache || false,
                 data: {
                     wordInfo: lookupResult,
                     fields: lookupFields,
-                    // Return templates for preview modal
                     css: ANKITRANS_CSS,
                     frontTemplate: ANKITRANS_FRONT_TEMPLATE,
                     backTemplate: ANKITRANS_BACK_TEMPLATE
